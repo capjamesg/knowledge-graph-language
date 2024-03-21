@@ -226,6 +226,14 @@ But:
 - `#` queries return integers.
 - `?` queries return booleans.
 
+## Tests
+
+To run the project test suite, run:
+
+```
+pytest test
+```
+
 ## License
 
 This project is licensed under an [MIT license](LICENSE).
