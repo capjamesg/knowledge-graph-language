@@ -25,7 +25,7 @@ You can query a single item:
 This will return all items associated with the `James` entry:
 
 ```
-[add code]
+{'Birthday': ['March 20th, 2024'], 'WorksFor': ['Roboflow', 'PersonalWeb', 'IndieWeb'], 'Enjoys': ['Coffee'], 'Hobbies': ['Making coffee']}
 ```
 
 ### Sequential Queries
@@ -43,7 +43,7 @@ This query gets the `James` item, retrieves for whom James works, then reports t
 The query returns:
 
 ```
-[add code]
+['Computer vision software.']
 ```
 
 ### Filter Queries
@@ -59,6 +59,111 @@ Consider this query:
 This query gets the instance of `Roboflow` that has the `EntityType` property `Company`. This could be used for disambiguation.
 
 Then, the query gets everyone who owns Roboflow who enjoys coffee. The query then finds who everyone works for, and returns their hobbies.
+
+This returns:
+
+```
+['Making coffee']
+```
+
+You can filter by the number of items connected to a node in the graph, too.
+
+Consider these triples:
+
+```
+("CLIP", "isA", "Paper")
+("CLIP", "Authors", "Person 1")
+("CLIP", "Authors", "Person 2")
+("Person 1", "Citations", "Paper 42")
+("Person 2", "Citations", "Paper 1")
+("Person 2", "Citations", "Paper 2")
+("Person 2", "Citations", "Paper 3")
+("Person 2", "Citations", "Paper 4")
+```
+
+
+Suppose you want to find all authors of the CLIP paper in a research graph, but you only want to retrieve authors whose work has been cited at least three times. You can do this with the following query:
+
+```
+{ CLIP -> Authors ("Citations" > "3") }
+```
+
+This query returns:
+
+```
+['Person 2']
+```
+
+This is because only `Person 2` has greater than three citations to their works.
+
+### Describe Relationships
+
+Suppose you want to know how `James` and `Roboflow` relate. For this, you can use the interrelation query operator (`<->`).
+
+Consider this query:
+
+```
+{ Roboflow <-> James }
+```
+
+This returns:
+
+```
+['Roboflow', ('James', 'WorksFor')]
+```
+
+Serialized into Knowledge Graph Language, this response is represented as:
+
+```
+Roboflow -> WorksFor
+```
+
+If we execute that query in introspection mode, we can see all information about James:
+
+```
+{ Roboflow -> WorksFor }!
+```
+
+This returns:
+
+```
+[{'James': {'Birthday': ['March 20th, 2024'], 'WorksFor': ['Roboflow', 'PersonalWeb', 'IndieWeb'], 'Enjoys': ['Coffee'], 'Hobbies': ['Coffee']}}, {'Tracy': {'WorksFor': ['MetaAI', 'Roboflow']}}]
+```
+
+### Introspection
+
+By default, all Sequential Queries return single values. For example, this query returns the names of everyone who works at Roboflow:
+
+```
+{ Roboflow -> WorksFor }
+```
+
+The response is:
+
+```
+['James', 'Tracy']
+```
+
+We can enable introspection mode to learn more about each of these responses. To enable introspection mode, append a `!` to the end of your query:
+
+```
+{ Roboflow -> WorksFor }!
+```
+
+This returns all attributes related, within one degree, to James and Tracy:
+
+```
+[{'James': {'Birthday': ['March 20th, 2024'], 'WorksFor': ['Roboflow', 'PersonalWeb', 'IndieWeb'], 'Enjoys': ['Coffee'], 'Hobbies': ['Coffee']}}, {'Tracy': {'WorksFor': ['MetaAI', 'Roboflow']}}]
+```
+
+### Description Operators
+
+By default, Knowledge Graph Language returns the value associated with your query. You can add operators to the end of your query to change the output.
+
+You can use:
+
+- `?` to return True if your query returns a response and False if your query returns no response.
+- `#` to count the number of responses
 
 ## License
 
