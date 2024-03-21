@@ -9,6 +9,8 @@ You can use this language to:
 - Return all nodes that are connected to a node and meet a specified condition.
 - Find how two nodes connect in a graph.
 
+This language is a work in progress.
+
 ## Ingesting Information
 
 This project allows you to index triples of data like:
@@ -175,6 +177,53 @@ You can use:
 
 - `?` to return True if your query returns a response and False if your query returns no response.
 - `#` to count the number of responses
+- 
+## Python API
+
+First, install KGL:
+
+```
+pip install kgl
+```
+
+### Create a Knowledge Graph
+
+```python
+from kgl import KnowledgeGraph
+
+kg = KnowledgeGraph()
+```
+
+### Ingest Items
+
+You can ingest triples of strings:
+
+```python
+kg.add_node(("Roboflow", "Owned", "Lenny"))
+```
+
+You can also ingest triples whose third item is a list:
+
+```python
+kg.add_node(("Alex", "Citations", ["MetaAI", "GoogleAI", "Coffee", "Teacup", "Roboflow"]))
+```
+
+### Evaluate a Query
+
+```python
+result = kg.evaluate("{ James }")
+print(result)
+```
+
+Responses are valid Python objects, whose type varies depending on your query.
+
+By default, KGL returns a list.
+
+But:
+
+- `!` queries return dictionaries.
+- `#` queries return integers.
+- `?` queries return booleans.
 
 ## License
 
