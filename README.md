@@ -1,4 +1,4 @@
-# Knowledge Graph Language
+# Knowledge Graph Language (KGL)
 
 Knowledge Graph Language is a query language for interacting with graphs. It accepts semantic triples (i.e. `("James", "Enjoys", "Coffee")`), indexes them, and makes them available for querying.
 
@@ -15,7 +15,7 @@ This language is a work in progress.
 
 This project allows you to index triples of data like:
 
-```
+```python
 ("James", "Enjoys", "Coffee")
 ("James", "Hobbies", "Making coffee")
 ("James", "WorksFor", "Roboflow")
@@ -23,7 +23,7 @@ This project allows you to index triples of data like:
 ("Roboflow", "EntityType", "Company")
 ```
 
-These triples can then be queried in a graph format.
+A graph is then constructed from the triples that you can then query.
 
 ## Syntax
 
