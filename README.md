@@ -1,8 +1,15 @@
 # Knowledge Graph Language
 
-This repository stores my experiment in making a knowledge graph language.
+Knowledge Graph Language is a query language for interacting with graphs. It accepts semantic triples (i.e. `("James", "Enjoys", "Coffee")`), indexes them, and makes them available for querying.
 
-## Syntax
+You can use this language to:
+
+- Find all attributes associated with a node in a graph.
+- Return all nodes that are connected to a node.
+- Return all nodes that are connected to a node and meet a specified condition.
+- Find how two nodes connect in a graph.
+
+## Ingesting Information
 
 This project allows you to index triples of data like:
 
@@ -13,6 +20,10 @@ This project allows you to index triples of data like:
 ("Roboflow", "Makes", "Computer Vision")
 ("Roboflow", "EntityType", "Company")
 ```
+
+These triples can then be queried in a graph format.
+
+## Syntax
 
 ### Query a Single Item
 
