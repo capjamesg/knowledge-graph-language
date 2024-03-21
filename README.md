@@ -177,7 +177,8 @@ You can use:
 
 - `?` to return True if your query returns a response and False if your query returns no response.
 - `#` to count the number of responses
-- 
+- `!` to return an introspection response.
+  
 ## Python API
 
 First, install KGL:
