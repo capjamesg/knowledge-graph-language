@@ -71,7 +71,7 @@ Consider this query:
 
 This query gets the instance of `Roboflow` that has the `EntityType` property `Company`. This could be used for disambiguation.
 
-Then, the query gets everyone who owns Roboflow who enjoys coffee. The query then finds who everyone works for, and returns their hobbies.
+Then, the query gets everyone who works at Roboflow who enjoys coffee. The query then finds who everyone works for, and returns their hobbies.
 
 This returns:
 
@@ -140,7 +140,7 @@ If we execute that query in introspection mode, we can see all information about
 This returns:
 
 ```
-[{'James': {'Birthday': ['March 20th, 2024'], 'WorksFor': ['Roboflow', 'PersonalWeb', 'IndieWeb'], 'Enjoys': ['Coffee'], 'Hobbies': ['Coffee']}}, {'Tracy': {'WorksFor': ['MetaAI', 'Roboflow']}}]
+[{'James': {'Birthday': ['March 20th, 2024'], 'WorksFor': ['Roboflow', 'PersonalWeb', 'IndieWeb'], 'Enjoys': ['Coffee'], 'Hobbies': ['Coffee']}}, {'Lenny': {'WorksFor': ['MetaAI', 'Roboflow']}}]
 ```
 
 ### Introspection
@@ -154,7 +154,7 @@ By default, all Sequential Queries return single values. For example, this query
 The response is:
 
 ```
-['James', 'Tracy']
+['James', 'Lenny']
 ```
 
 We can enable introspection mode to learn more about each of these responses. To enable introspection mode, append a `!` to the end of your query:
@@ -163,10 +163,10 @@ We can enable introspection mode to learn more about each of these responses. To
 { Roboflow -> WorksFor }!
 ```
 
-This returns all attributes related, within one degree, to James and Tracy:
+This returns all attributes related, within one degree, to James and Lenny, who both work at Roboflow:
 
 ```
-[{'James': {'Birthday': ['March 20th, 2024'], 'WorksFor': ['Roboflow', 'PersonalWeb', 'IndieWeb'], 'Enjoys': ['Coffee'], 'Hobbies': ['Coffee']}}, {'Tracy': {'WorksFor': ['MetaAI', 'Roboflow']}}]
+[{'James': {'Birthday': ['March 20th, 2024'], 'WorksFor': ['Roboflow', 'PersonalWeb', 'IndieWeb'], 'Enjoys': ['Coffee'], 'Hobbies': ['Coffee']}}, {'Lenny': {'WorksFor': ['MetaAI', 'Roboflow']}}]
 ```
 
 ### Description Operators
