@@ -2,12 +2,41 @@ import lark
 import csv
 from .grammar import grammar
 from typing import Union, List, Dict, Any
-
+import json
 
 parser = lark.Lark(grammar)
 
 
-def eval_condition(condition, node, kg):
+def serialize_shortest_path_as_str(shortest_path) -> None:
+    print(shortest_path[0], end="")
+
+    for i in range(1, len(shortest_path)):
+        print(" ->", shortest_path[i][1], "->", shortest_path[i][0], end="")
+
+    print()
+
+
+def eval_conditional(comparator, evaluated_term, term_to_match) -> list:
+    """
+    Evaluate a conditional on a term.
+    """
+    if comparator == "=" and evaluated_term == term_to_match:
+        return True
+    elif comparator == "!=" and evaluated_term != term_to_match:
+        return True
+    elif comparator == ">" and evaluated_term > term_to_match:
+        return True
+    elif comparator == "<" and evaluated_term < term_to_match:
+        return True
+
+    return False
+
+
+def eval_condition(condition, node, kg) -> list:
+    """
+    Evaluate a condition on a node.
+    """
+
     result = []
 
     term1 = condition.children[0].children[0].value.strip().strip('"')
@@ -22,25 +51,7 @@ def eval_condition(condition, node, kg):
 
             evaluated_term = kg.get_nodes(item)[term1][0]
 
-            if comparator == "=" and evaluated_term == term2:
-                result.append(item)
-            elif comparator == "!=" and evaluated_term != term2:
-                result.append(item)
-            elif (
-                comparator == ">"
-                and isinstance(evaluated_term, int)
-                and evaluated_term > int(term2)
-            ):
-                result.append(item)
-            elif comparator == ">" and len(list(set(evaluated_term))) > int(term2):
-                result.append(item)
-            elif (
-                comparator == "<"
-                and isinstance(evaluated_term, int)
-                and evaluated_term < int(term2)
-            ):
-                result.append(item)
-            elif comparator == "<" and len(list(set(evaluated_term))) < int(term2):
+            if eval_conditional(comparator, evaluated_term, term2):
                 result.append(item)
     else:
         if not kg.get_nodes_by_connection(node, term1):
@@ -49,20 +60,8 @@ def eval_condition(condition, node, kg):
 
         evaluated_term = kg.get_nodes(node)[term1][0]
 
-        if comparator == "=" and evaluated_term == term2:
+        if eval_conditional(comparator, evaluated_term, term2):
             result.append(node)
-        elif comparator == "!=" and evaluated_term != term2:
-            result.append(node)
-        elif comparator == ">" and len(list(set(evaluated_term))) > int(term2):
-            result.append(item)
-        elif (
-            comparator == "<"
-            and isinstance(evaluated_term, int)
-            and evaluated_term < int(term2)
-        ):
-            result.append(item)
-        elif comparator == "<" and len(list(set(evaluated_term))) < int(term2):
-            result.append(item)
 
     return result
 
@@ -71,6 +70,7 @@ class KnowledgeGraph:
     """
     A Knowledge Graph Language graph representation of triples.
     """
+
     def _validate_triple(self, triple):
         """
         Ensure that the triple is a tuple with exactly three elements.
@@ -79,10 +79,10 @@ class KnowledgeGraph:
             raise ValueError("Triple must be a tuple")
         if len(triple) != 3:
             raise ValueError("Triple must have exactly 3 elements")
-        
+
         if not isinstance(triple[0], str):
             raise ValueError("First element of triple must be a string")
-        
+
         if not isinstance(triple[1], str):
             raise ValueError("Second element of triple must be a string")
 
@@ -169,12 +169,10 @@ class KnowledgeGraph:
 
         def dfs(node, path):
             if node == item2:
-                print("Found path", path)
                 paths.append(path)
                 return
 
             visited.add(node)
-            print("Visiting", node)
 
             for connection in self.get_nodes(node):
                 for c in self.get_nodes(node)[connection]:
@@ -191,13 +189,6 @@ class KnowledgeGraph:
         dfs(current_node, [current_node])
 
         shortest_path = min(paths, key=len)
-
-        print(shortest_path[0], end="")
-
-        for i in range(1, len(shortest_path)):
-            print(" ->", shortest_path[i][1], "->", shortest_path[i][0], end="")
-
-        print()
 
         return shortest_path
 
@@ -230,7 +221,6 @@ class KnowledgeGraph:
 
             for i in range(len(children)):
                 if isinstance(children[i], lark.tree.Tree):
-                    print(children[i])
                     if children[i].data == "interrelation":
                         is_evaluating_relation = True
                         break
@@ -254,7 +244,6 @@ class KnowledgeGraph:
                                 children[i].children[0].children[0].value
                             )
                             if len(relation_terms) == 2:
-                                print("Getting connection between", relation_terms)
                                 result = self.get_connection_paths(
                                     relation_terms[0], relation_terms[1]
                                 )
@@ -303,7 +292,6 @@ class KnowledgeGraph:
                             # if no result, get all properties
                             if not result:
                                 result = self.get_nodes(node)
-                                print("Result", result)
                             # if result is list:
                             elif isinstance(result, list):
                                 result = [
@@ -314,14 +302,11 @@ class KnowledgeGraph:
                                 result = [
                                     item for sublist in result for item in sublist
                                 ]
-                                print("Result", result)
                             else:
                                 result = result[node]
 
                         if result == []:
                             return []
-                    else:
-                        print("Unknown data type", children[i].data)
                 else:
                     if children[i].type == "EXPAND":
                         expand = True
@@ -348,7 +333,7 @@ class KnowledgeGraph:
                     final_result = []
                 else:
                     final_result = final_results[0]
-        
+
         if count:
             return len(final_result)
         elif question:
@@ -369,9 +354,10 @@ class KnowledgeGraph:
             acc = sorted(acc, key=lambda x: list(x.keys())[0])
 
             return acc
-        
+
         return final_results
 
+    @staticmethod
     def load_from_csv(self, file_name):
         """
         Load the graph from a CSV file.
@@ -382,6 +368,7 @@ class KnowledgeGraph:
                 row = tuple(row)
                 self.add_node(row)
 
+    @staticmethod
     def load_from_tsv(self, file_name):
         """
         Load the graph from a TSV file.
@@ -392,6 +379,25 @@ class KnowledgeGraph:
                 row = tuple(row)
                 self.add_node(row)
 
+    @staticmethod
+    def from_json_file(self, file_name):
+        """
+        Load the graph from a JSON object.
+        """
+        with open(file_name, mode="r") as file:
+            data = json.load(file)
+            entity = data.get("Entity")
+
+            if not entity:
+                raise ValueError("JSON object must have an 'Entity' key")
+
+            for key, value in entity.items():
+                if key == "Entity":
+                    continue
+
+                self.add_node((entity, key, value))
+
+    @staticmethod
     def export_to_csv(self, file_name) -> None:
         """
         Export the graph to a CSV file.
@@ -400,7 +406,8 @@ class KnowledgeGraph:
             writer = csv.writer(file)
             for row in self.index_by_connection:
                 writer.writerow(row)
-    
+
+    @staticmethod
     def export_to_tsv(self, file_name) -> None:
         """
         Export the graph to a TSV file.
