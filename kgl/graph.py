@@ -1,8 +1,10 @@
-import lark
 import csv
-from .grammar import grammar
-from typing import Union, List, Dict, Any
 import json
+from typing import Any, Dict, List, Union
+
+import lark
+
+from .grammar import grammar
 
 parser = lark.Lark(grammar)
 
@@ -85,6 +87,9 @@ class KnowledgeGraph:
 
         if not isinstance(triple[1], str):
             raise ValueError("Second element of triple must be a string")
+        
+        if not isinstance(triple[2], str) and not isinstance(triple[2], list):
+            raise ValueError("Third element of triple must be a string or list")
 
     def __init__(self):
         self.index_by_connection = []
@@ -206,6 +211,7 @@ class KnowledgeGraph:
         operand = None
         count = False
         question = False
+        intersection = False
 
         is_evaluating_relation = False
         relation_terms = []
@@ -320,14 +326,24 @@ class KnowledgeGraph:
                     if children[i].type == "operand":
                         operand = children[i].value
                         continue
+                    if children[i].type == "INTERSECTION":
+                        intersection = True
+                        continue
 
-            final_results.append(result)
+            final_results.append(result if result else [])
 
-        if operand == "INTERSECTION":
+        # remove all false values
+        final_results = [item for item in final_results if item]
+
+        if intersection:
+            print("Final results", final_results)
             final_result = set(final_results[0]).intersection(set(final_results[1]))
+            return [list(final_result)]
         else:
             try:
+                print("Final results", final_results)
                 final_result = set(final_results[0]).union(set(final_results[1]))
+                return [list(final_result)]
             except:
                 if len(final_results) == 0:
                     final_result = []
@@ -357,7 +373,6 @@ class KnowledgeGraph:
 
         return final_results
 
-    @staticmethod
     def load_from_csv(self, file_name):
         """
         Load the graph from a CSV file.
@@ -368,7 +383,8 @@ class KnowledgeGraph:
                 row = tuple(row)
                 self.add_node(row)
 
-    @staticmethod
+        return self
+
     def load_from_tsv(self, file_name):
         """
         Load the graph from a TSV file.
@@ -379,25 +395,29 @@ class KnowledgeGraph:
                 row = tuple(row)
                 self.add_node(row)
 
-    @staticmethod
-    def from_json_file(self, file_name):
+        return self
+
+    def load_from_json_file(self, file_name):
         """
         Load the graph from a JSON object.
         """
         with open(file_name, mode="r") as file:
             data = json.load(file)
-            entity = data.get("Entity")
+            for item in data:
+                entity = item.get("Entity")
 
-            if not entity:
-                raise ValueError("JSON object must have an 'Entity' key")
+                if not entity:
+                    raise ValueError("JSON object must have an 'Entity' key")
 
-            for key, value in entity.items():
-                if key == "Entity":
-                    continue
+                for key, value in item.items():
+                    if key == "Entity":
+                        continue
 
-                self.add_node((entity, key, value))
+                    print("Adding", entity, key, value)
+                    self.add_node((entity, key, value))
 
-    @staticmethod
+        return self
+
     def export_to_csv(self, file_name) -> None:
         """
         Export the graph to a CSV file.
@@ -407,7 +427,6 @@ class KnowledgeGraph:
             for row in self.index_by_connection:
                 writer.writerow(row)
 
-    @staticmethod
     def export_to_tsv(self, file_name) -> None:
         """
         Export the graph to a TSV file.
