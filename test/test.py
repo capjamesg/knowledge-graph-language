@@ -25,8 +25,29 @@ def test_evaluate_operations(kg):
     assert kg.evaluate("{ James <-> Coffee }?") == True
 
 
+def test_adding_valid_triple_with_list_value(kg):
+    kg.add_node(("James", "Likes", ["Terraria", "Cats"]))
+    assert kg.evaluate("{ James -> Likes }") == [["Coffee", "Terraria", "Cats"]]
+
+
+def test_adding_invalid_triple(kg):
+    with pytest.raises(ValueError):
+        kg.add_node(("James", "Dislikes"))
+        kg.add_node(("James", "Dislikes", 1))
+        kg.add_node(("James", "Dislikes", ("Coffee", "Tea")))
+
+
 def test_evaluate_introspection(kg):
     assert kg.evaluate("{ James -> Likes }!") == [{"Coffee": {"Likes": ["James"]}}]
+
+
+def test_querying_root_property_that_does_not_exist(kg):
+    assert kg.evaluate("{ Test }") == []
+
+
+def test_querying_leaf_property_that_does_not_exist(kg):
+    with pytest.raises(ValueError):
+        kg.evaluate("{ James -> Dislikes }")
 
 
 def test_evaluate_union(kg):

@@ -13,7 +13,7 @@ COMPARATOR: "=" | "!=" | ">" | "<"
 CNAME: /[a-zA-Z0-9_]+/
 condition: ("(" string COMPARATOR string ")"?)*
 node: property condition?
-property: CNAME
+property: /[a-zA-Z0-9_ ]+/
 string: ESCAPED_STRING | int
 int: /[0-9]+/
 %import common.WS

@@ -8,7 +8,6 @@ from .grammar import grammar
 
 parser = lark.Lark(grammar)
 
-
 def serialize_shortest_path_as_str(shortest_path) -> None:
     print(shortest_path[0], end="")
 
@@ -87,7 +86,7 @@ class KnowledgeGraph:
 
         if not isinstance(triple[1], str):
             raise ValueError("Second element of triple must be a string")
-        
+
         if not isinstance(triple[2], str) and not isinstance(triple[2], list):
             raise ValueError("Third element of triple must be a string or list")
 
@@ -99,21 +98,31 @@ class KnowledgeGraph:
         """
         Given a triple, add it to the graph.
         """
+
+        self._validate_triple(triple)
+
         item = triple[0]
         relates_to = triple[1]
         value = triple[2]
 
-        self._validate_triple(triple)
-
         if isinstance(value, list):
+            relates_to = relates_to.strip()
+
             for val in value:
+                val = val.strip()
                 if val not in self.reverse_index_by_connection:
                     self.reverse_index_by_connection[val] = {}
 
                 if relates_to not in self.reverse_index_by_connection[val]:
                     self.reverse_index_by_connection[val][relates_to] = []
 
-                self.reverse_index_by_connection[val][relates_to].append(item)
+                if item not in self.reverse_index_by_connection:
+                    self.reverse_index_by_connection[item] = {}
+
+                if relates_to not in self.reverse_index_by_connection[item]:
+                    self.reverse_index_by_connection[item][relates_to] = []
+
+                self.reverse_index_by_connection[item][relates_to].append(val)
 
                 self.reverse_index_by_connection[val][relates_to] = list(
                     set(self.reverse_index_by_connection[val][relates_to])
@@ -121,6 +130,8 @@ class KnowledgeGraph:
 
                 self.index_by_connection.append((item, relates_to, val))
         else:
+            value = value.strip()
+            relates_to = relates_to.strip()
             if value not in self.reverse_index_by_connection:
                 self.reverse_index_by_connection[value] = {}
 
@@ -142,6 +153,7 @@ class KnowledgeGraph:
             )
 
             self.index_by_connection.append((item, relates_to, value))
+        print("Added", item, relates_to, value)
 
     def get_nodes(self, item) -> dict:
         """
@@ -169,7 +181,8 @@ class KnowledgeGraph:
         Get the shortest path between two items.
         """
         paths = []
-        current_node = item1
+        current_node = item1.strip()
+        item2 = item2.strip()
         visited = set()
 
         def dfs(node, path):
@@ -193,9 +206,12 @@ class KnowledgeGraph:
 
         dfs(current_node, [current_node])
 
-        shortest_path = min(paths, key=len)
+        if paths == []:
+            return []
 
-        return shortest_path
+        shortest_paths = min(paths, key=len)
+
+        return shortest_paths
 
     def evaluate(self, text) -> Union[int, bool, List[Dict[str, Any]]]:
         """
@@ -260,6 +276,7 @@ class KnowledgeGraph:
 
                         node = children[i].children[0].children[0].value.strip()
                         property = children[i].children[0].children[0].value.strip()
+
                         if (
                             len(children[i].children) > 1
                             and len(children[i].children[1].children) > 0
@@ -309,7 +326,12 @@ class KnowledgeGraph:
                                     item for sublist in result for item in sublist
                                 ]
                             else:
-                                result = result[node]
+                                try:
+                                    result = result[node]
+                                except:
+                                    raise ValueError(
+                                        "Node does not have property " + node + "."
+                                    )
 
                         if result == []:
                             return []
@@ -322,9 +344,6 @@ class KnowledgeGraph:
                         continue
                     if children[i].type == "QUESTION":
                         question = True
-                        continue
-                    if children[i].type == "operand":
-                        operand = children[i].value
                         continue
                     if children[i].type == "INTERSECTION":
                         intersection = True
@@ -341,7 +360,6 @@ class KnowledgeGraph:
             return [list(final_result)]
         else:
             try:
-                print("Final results", final_results)
                 final_result = set(final_results[0]).union(set(final_results[1]))
                 return [list(final_result)]
             except:
