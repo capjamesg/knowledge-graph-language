@@ -1,5 +1,6 @@
 import csv
 import json
+import random
 from typing import Any, Dict, List, Union
 
 import lark
@@ -7,6 +8,14 @@ import lark
 from .grammar import grammar
 
 parser = lark.Lark(grammar)
+
+
+def value_error(error_type, message):
+    if error_type == "error":
+        print("\033[91mError:\033[0m", message)
+    elif error_type == "warning":
+        print("\033[93mKGL Warning:\033[0m", message)
+
 
 def serialize_shortest_path_as_str(shortest_path) -> None:
     print(shortest_path[0], end="")
@@ -47,7 +56,7 @@ def eval_condition(condition, node, kg) -> list:
     if isinstance(node, list):
         for item in node:
             if not kg.get_nodes(item).get(term1):
-                print("Node", item, "does not have property", term1)
+                # print("Node", item, "does not have property", term1)
                 continue
 
             evaluated_term = kg.get_nodes(item)[term1][0]
@@ -56,7 +65,7 @@ def eval_condition(condition, node, kg) -> list:
                 result.append(item)
     else:
         if not kg.get_nodes_by_connection(node, term1):
-            print("Node", node, "does not have property", term1)
+            # print("Node", node, "does not have property", term1)
             return []
 
         evaluated_term = kg.get_nodes(node)[term1][0]
@@ -90,20 +99,29 @@ class KnowledgeGraph:
         if not isinstance(triple[2], str) and not isinstance(triple[2], list):
             raise ValueError("Third element of triple must be a string or list")
 
-    def __init__(self):
+    def __init__(self, allow_substring_search=False):
         self.index_by_connection = []
         self.reverse_index_by_connection = {}
+        self.search_index = {}
+        self.allow_substring_search = allow_substring_search
 
     def add_node(self, triple) -> None:
         """
         Given a triple, add it to the graph.
         """
 
-        self._validate_triple(triple)
+        try:
+            self._validate_triple(triple)
+        except ValueError as e:
+            return
 
-        item = triple[0]
-        relates_to = triple[1]
-        value = triple[2]
+        # don't add if first item is only 1 len, unless it is "i"
+        if len(triple[0].strip()) < 1 and triple[0].strip() != "i":
+            return
+
+        item = triple[0].lower().strip()
+        relates_to = triple[1].lower()
+        value = triple[2].lower().strip()
 
         if isinstance(value, list):
             relates_to = relates_to.strip()
@@ -153,7 +171,22 @@ class KnowledgeGraph:
             )
 
             self.index_by_connection.append((item, relates_to, value))
-        print("Added", item, relates_to, value)
+
+        if self.allow_substring_search:
+            for word in item.split():
+                if word not in self.search_index:
+                    self.search_index[word] = []
+
+                self.search_index[word].append(item)
+            ngrams = []
+            for i in range(1, len(item.split())):
+                ngrams.append(" ".join(item.split()[i:]))
+
+            for ngram in ngrams:
+                if ngram not in self.search_index:
+                    self.search_index[ngram] = []
+
+                self.search_index[ngram].append(item)
 
     def get_nodes(self, item) -> dict:
         """
@@ -213,24 +246,73 @@ class KnowledgeGraph:
 
         return shortest_paths
 
+    def remove_node(self, item) -> None:
+        """
+        Remove a node from the graph.
+        """
+        all_relations_of_item = self.get_nodes(item)
+
+        if item in self.reverse_index_by_connection:
+            del self.reverse_index_by_connection[item]
+
+        for relation in all_relations_of_item:
+            for connected_item in all_relations_of_item[relation]:
+                self.index_by_connection.remove((item, relation, connected_item))
+                self.reverse_index_by_connection[connected_item][relation].remove(item)
+
     def evaluate(self, text) -> Union[int, bool, List[Dict[str, Any]]]:
         """
         Evaluate a query on the graph.
         """
 
-        l = parser.parse(text)
+        try:
+            l = parser.parse(text)
+        except:
+            raise ValueError("Invalid query")
 
         parent_tree = l.children
 
         final_results = []
         expand = False
-        operand = None
         count = False
         question = False
         intersection = False
 
         is_evaluating_relation = False
         relation_terms = []
+
+        if (
+            len(parent_tree) > 0
+            and isinstance(parent_tree[0], lark.tree.Tree)
+            and len(parent_tree[0].children) == 0
+        ):
+            item = self.index_by_connection[
+                random.randint(0, len(self.index_by_connection) - 1)
+            ][0]
+            return self.evaluate("{" + item + "}")
+        # Is leaf
+        elif (
+            len(parent_tree) > 0
+            and hasattr(parent_tree[0], "type")
+            and parent_tree[0].type == "QUESTION"
+        ):
+            # brute force up to 1000 times
+            iters = 0
+            while iters < 1000:
+                item1 = self.index_by_connection[
+                    random.randint(0, len(self.index_by_connection) - 1)
+                ][0]
+                item2 = self.index_by_connection[
+                    random.randint(0, len(self.index_by_connection) - 1)
+                ][0]
+                shortest_path = self.get_connection_paths(item1, item2)
+                if shortest_path:
+                    serialize_shortest_path_as_str(shortest_path)
+                    return True
+
+            return False
+
+        result_accumulator = []
 
         for child in parent_tree:
             children = child.children
@@ -251,7 +333,7 @@ class KnowledgeGraph:
                 if isinstance(children[i], lark.tree.Tree):
                     if children[i].data == "property":
                         property = children[i].children[0].value.strip()
-                        print("Getting", property, "of", node)
+                        # print("Getting", property, "of", node)
                         if isinstance(node, list):
                             result = [
                                 self.get_nodes_by_connection(n, property) for n in node
@@ -261,11 +343,26 @@ class KnowledgeGraph:
                             result = self.get_nodes_by_connection(node, property)
                         node = result
                     elif children[i].data == "node":
+                        subsequence = False
+                        enumerate_options = False
+                        # if node has subsequence operator
+                        # search for subsequence operator in children
+                        for j in range(len(children[i].children)):
+                            if children[i].children[j].data == "subsequence_operator":
+                                print("Subsequence operator found")
+                                subsequence = True
+                            elif children[i].children[j].data == "enumerate_options":
+                                print("Enumerate options found")
+                                enumerate_options = True
+
                         if is_evaluating_relation:
                             relation_terms.append(
                                 children[i].children[0].children[0].value
                             )
-                            if len(relation_terms) == 2:
+
+                            # if second from last node or last node, evaluate relation
+                            if i == len(children) - 2 or i == len(children) - 1:
+                                print("Evaluating relation", relation_terms)
                                 result = self.get_connection_paths(
                                     relation_terms[0], relation_terms[1]
                                 )
@@ -307,14 +404,37 @@ class KnowledgeGraph:
                             else:
                                 condition = children[i].children[1]
                                 result = eval_condition(condition, node, self)
-                                print(result)
+                                # print(result)
                                 all_items.append(result)
                             # flatten list
                             result = [item for sublist in all_items for item in sublist]
                         else:
+                            # print("Getting", property, "of", node, subsequence, enumerate_options, result)
                             # if no result, get all properties
-                            if not result:
+                            # if allow substring is falase and subseqnece or enumerate is true, print warning
+                            if self.allow_substring_search == False and (
+                                subsequence or enumerate_options
+                            ):
+                                value_error(
+                                    "warning",
+                                    "Subsequence and enumerate options are not allowed without `allow_substring_search` set to True.",
+                                )
+                            if not result and not subsequence and not enumerate_options:
                                 result = self.get_nodes(node)
+                            elif not result and (subsequence or enumerate_options):
+                                nodes_that_mention_term = self.search_index.get(
+                                    node, []
+                                )
+                                result = []
+                                for node in nodes_that_mention_term:
+                                    # if enumerate options, add node name, else add dict
+                                    if enumerate_options:
+                                        result.append(node)
+                                    else:
+                                        result.append({node: self.get_nodes(node)})
+
+                                if enumerate_options:
+                                    result = list(set(result))
                             # if result is list:
                             elif isinstance(result, list):
                                 result = [
@@ -355,7 +475,7 @@ class KnowledgeGraph:
         final_results = [item for item in final_results if item]
 
         if intersection:
-            print("Final results", final_results)
+            # print("Final results", final_results)
             final_result = set(final_results[0]).intersection(set(final_results[1]))
             return [list(final_result)]
         else:
@@ -377,7 +497,7 @@ class KnowledgeGraph:
                 return final_result
 
             acc = []
-            print("Final result", final_result)
+            # print("Final result", final_result)
 
             for item in final_result:
                 nodes = self.get_nodes(item)
@@ -431,7 +551,6 @@ class KnowledgeGraph:
                     if key == "Entity":
                         continue
 
-                    print("Adding", entity, key, value)
                     self.add_node((entity, key, value))
 
         return self
@@ -453,3 +572,17 @@ class KnowledgeGraph:
             writer = csv.writer(file, delimiter="\t")
             for row in self.index_by_connection:
                 writer.writerow(row)
+
+    def export_graph_index(self, file_name) -> None:
+        """
+        Export the graph index.
+        """
+
+        with open(file_name, mode="w+") as f:
+            index = {
+                "index_by_connection": self.index_by_connection,
+                "reverse_index_by_connection": self.reverse_index_by_connection,
+                "search_index": self.search_index,
+            }
+
+            json.dump(index, f)

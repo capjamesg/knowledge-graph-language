@@ -1,6 +1,6 @@
 grammar = """
-start: query (operand query)*
-query: "{" node ((relation | interrelation) node)* "}" (EXPAND | QUESTION | COUNT)?
+start: QUESTION | query (operand query)*
+query: "{}" | "{" node ((relation | interrelation) node)* "}" (EXPAND | QUESTION | COUNT)?
 operand: PLUS | INTERSECTION
 PLUS: "+"
 INTERSECTION: "INTERSECTION"
@@ -12,7 +12,9 @@ COUNT: "#"
 COMPARATOR: "=" | "!=" | ">" | "<"
 CNAME: /[a-zA-Z0-9_]+/
 condition: ("(" string COMPARATOR string ")"?)*
-node: property condition?
+node: property (enumerate_options | subsequence_operator)? condition?
+subsequence_operator: "++"
+enumerate_options: "+"
 property: /[a-zA-Z0-9_ ]+/
 string: ESCAPED_STRING | int
 int: /[0-9]+/
