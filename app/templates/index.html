@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="https://jamesg.blog/favicon.ico" type="image/x-icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KGL Interpreter</title>
+    <meta name="description" content="An interpreter for the Knowledge Graph Language">
+    <script src="https://kit.fontawesome.com/52ae67a839.js" crossorigin="anonymous" async=""></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+        }
+        html {
+            margin: 0;
+            padding: 0;
+            max-height: 100%;
+        }
+        main {
+            padding: 25px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        summary {
+            margin-bottom: 5px;
+        }
+        details > p {
+            margin-left: 25px;
+        }
+        details {
+            margin-bottom: 10px;
+        }
+        ul {
+            list-style-type: none;
+            margin-bottom: 10px;
+        }
+        li {
+            margin-bottom: 3px;
+        }
+        #output {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 20px;
+            margin-top: 10px;
+            overflow: auto;
+            height: 500px;
+            max-height: 500px;
+            width: 100%;
+            background-color: #f1f1f1;
+        }
+        a {
+            text-decoration: none;
+            color: royalblue;
+        }
+        #tabs li {
+            display: inline;
+            margin-right: 10px;
+        }
+        form, input {
+            display: block;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .bubble {
+            background-color: #e1e1e1;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 20px;;
+            display: inline-block;
+        }
+        .bubble:hover {
+            background-color: darkgray;
+        }
+        .copy {
+            float: right;
+            color: darkgreen;
+            margin-right: 10px;
+        }
+        #examples {
+            margin-top: 10px;
+            list-style-type: none;
+        }
+        #examples li {
+            margin-bottom: 10px;
+            margin-left: 10px;
+        }
+        form {
+            display: flex;
+            flex-direction: row;
+        }
+        button {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            color: green;
+            cursor: pointer;
+            margin-left: 10px;
+            display: flex;
+            height: fit-content;
+        }
+        footer {
+            margin-top: 10px;
+        }
+        form i {
+            margin-right: 10px;
+            margin-top: 15px;
+            color: green;
+        }
+        button i {
+            margin-right: 5px;
+            margin-top: 5px;
+        }
+        .fa-code {
+            color: green;
+        }
+        #tabs a:hover {
+            background-color: royalblue;
+            color: white;
+        }
+        a:focus, a:hover {
+            background-color: yellow;
+            color: black;
+        }
+        button:focus {
+            background-color: yellow;
+            color: black;
+        }
+        button:hover {
+            background-color: green;
+            color: black;
+            .fa-play {
+                color: black;
+            }
+        }
+        @media screen and (max-width: 600px) {
+            h1 {
+                font-size: 24px;
+                margin-bottom: 10px;
+            }
+            #output {
+                height: 400px;
+                max-height: 400px;
+            }
+            .copy {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>KGL Interpreter <i class="fas fa-code"></i></h1>
+        <form>
+            <input type="text" name="code" id="code" placeholder="{ }" value="{ }" />
+            <button onclick="document.getElementById('code').dispatchEvent(new KeyboardEvent('keypress', { 'key': 'Enter' }))" type="button"><i class="fas fa-play"></i> <span>Run</span></button>
+            <!-- <ul>
+                <li>{ coffee } - Retrieve connections to a node.</li>
+                <li>{ i -> like } - Retrieve information about a relationship.</li>
+            </ul> -->
+        </form>
+        <p id="suggestions"></p>
+        <ul id="tabs">
+            <li><a onclick="setMode('pretty');" href="#">View Pretty Print</a></li>
+            <li><a onclick="setMode('json');" href="#">View Raw JSON</a></li>
+            <li><a class="copy" href="#" onclick="document.getElementById('code').select(); document.execCommand('copy'); return false;">Copy Query to Clipboard <i class="fas fa-copy"></i></a></li>
+        </ul>
+        <section id="output">
+            <p>Make a query to see the output! 🤗</p>
+            <br>
+            <p>Here are a few examples:</p>
+            <ul id="examples">
+                <li><a href="#" onclick="runExample('{ coffee }')"><span class="bubble">{ coffee }</span></a>  Retrieve connections to a node</li>
+                <li><a href="#" onclick="runExample('{ taylor swift -> created }')"><span class="bubble">{ taylor swift -> created }</span></a>  Retrieve information about a relationship</li>
+                <li><a href="#" onclick="runExample('{ coffee }#')"> <span class="bubble">{ coffee }#</span></a>  Count connections to a node</li>
+            </ul>
+        </section>
+        <footer>
+            <p>Created by <a href="https://jamesg.blog" target="_blank">capjamesg</a>.</p>
+            <p><a href="">View Language Reference</a>.</p>
+        </footer>
+    </main>
+    <script>
+        var mode = 'pretty';
+
+        function runExample (example) {
+            document.getElementById('code').value = example;
+            document.getElementById('code').dispatchEvent(new KeyboardEvent('keypress', { 'key': 'Enter' }));
+        }
+
+        function setMode(newMode) {
+            mode = newMode;
+            document.getElementById('output').innerHTML = '';
+        }
+
+        function endsWithAny(suffixes, string) {
+            return suffixes.some(function (suffix) {
+                return string.endsWith(suffix);
+            });
+        }
+
+        document.getElementById('code').addEventListener('keydown', function(e) {
+            if (e.key === 'Tab' && document.activeElement === document.getElementById('code') && !e.shiftKey && !endsWithAny(['}', '!', '?'], document.getElementById('code').value)) {
+                e.preventDefault();
+                const suggestions = document.getElementById('suggestions').children;
+                if (suggestions.length > 0) {
+                    document.getElementById('code').value = "{ " + suggestions[0].textContent;
+                    document.getElementById('suggestions').innerHTML = '';
+                }
+            }
+        });
+        
+        document.getElementById('code').addEventListener('input', function(e) {
+            const code = document.getElementById('code').value;
+            fetch('/autocomplete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ query: code })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const suggestions = data["completions"];
+                const p = document.getElementById('suggestions');
+                p.innerHTML = '';
+                for (let i = 0; i < suggestions.length; i++) {
+                    const span = document.createElement('span');
+                    span.textContent = suggestions[i];
+                    span.style.marginRight = '10px';
+                    span.style.cursor = 'pointer';
+                    span.classList.add('bubble');
+                    span.onclick = function() {
+                        document.getElementById('code').value = "{ " + suggestions[i] + " }";
+                        p.innerHTML = '';
+                        document.getElementById('code').dispatchEvent(new KeyboardEvent('keypress', { 'key': 'Enter' }));
+                    };
+                    p.appendChild(span);
+                }
+            });
+        });
+
+        document.getElementById('code').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const code = document.getElementById('code').value;
+                console.log(code);
+                fetch('/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query: code })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('output').innerHTML = '';
+                    if (data["error"]) {
+                        const p = document.createElement('p');
+                        p.textContent = 'Syntax Error';
+                        document.getElementById('output').appendChild(p);
+                        return;
+                    }
+
+                    if (typeof data["result"][0] === 'number') {
+                        const p = document.createElement('p');
+                        p.textContent = data["result"][0];
+                        document.getElementById('output').appendChild(p);
+                        return;
+                    }
+
+                    if (typeof data["result"][0] === 'boolean') {
+                        const p = document.createElement('p');
+                        p.textContent = data["result"][0] ? 'True' : 'False';
+                        document.getElementById('output').appendChild(p);
+                        return;
+                    }
+
+                    if (data["result"].length === 0) {
+                        const p = document.createElement('p');
+                        p.textContent = 'No results found.';
+                        document.getElementById('output').appendChild(p);
+                        return;
+                    }
+                    if (mode === 'json') {
+                        const pre = document.createElement('pre');
+                        pre.textContent = JSON.stringify(data, null, 2);
+                        document.getElementById('output').appendChild(pre);
+                        return;
+                    }
+                    for (let i = 0; i < data["result"].length; i++) {
+                        var keys_values = Object.entries(data["result"][i]);
+
+                        if (keys_values[0][0] === "0") {
+                            const ul = document.createElement('ul');
+
+                            for (var j = 0; j < keys_values.length; j++) {
+                                const li = document.createElement('li');
+                                li.textContent = keys_values[j][1];
+                                ul.appendChild(li);
+                            }
+                            document.getElementById('output').appendChild(ul);
+                        } else {
+                            for (var j = 0; j < keys_values.length; j++) {
+                                const details = document.createElement('details');
+                                const summary = document.createElement('summary');
+
+                                summary.textContent = keys_values[j][0];
+                                details.appendChild(summary);
+                                const p = document.createElement('p');
+
+                                if (keys_values[j][1].length > 0 && typeof keys_values[j][1][0] === 'object') {
+                                    keys_values[j][1] = keys_values[j][1].map(function(x) {
+                                        return Object.values(x).join(', ');
+                                    });
+                                    p.textContent = keys_values[j][1].join(', ');
+                                } 
+                                try {
+                                    // NB: This doesn't work properly. Need to fix this.
+                                    if (Object.keys(keys_values[j][1]).length > 0) {
+                                        p.textContent = JSON.stringify(keys_values[j][1]);
+                                    } else {
+                                        p.textContent = keys_values[j][1];
+                                    }
+                                } catch (e) {
+                                    console.log(e);
+                                    p.textContent = keys_values[j][1];
+                                }
+                                
+                                details.appendChild(p);
+                                details.open = true;
+                                document.getElementById('output').appendChild(details);
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
