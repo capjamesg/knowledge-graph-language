@@ -105,6 +105,33 @@ def add_item_to_index(
     return index
 
 
+def graph_to_dot(graph, query):
+    dot = "digraph G {\n"
+    dot += "rankdir=LR\n"
+    # extract query
+    query = query[1:-1].split("|")
+    query = [q.strip() for q in query]
+    query = query[0]
+
+    graph = {query: graph}
+
+    for query, nodes in graph.items():
+        for n in nodes:
+            # if is dict
+            if isinstance(n, dict):
+                for k, v in n.items():
+                    for label in v:
+                        dot += f'"{query}" -> "{k}" [label="{label}"]\n'
+            else:
+                root_node = query.split("->")[0]
+                relation = query.split("->")[1]
+                for item in n:
+                    dot += f'"{root_node}" -> "{item}" [label="{relation}"]\n'
+
+    dot += "}"
+    return dot
+
+
 class KnowledgeGraph:
     """
     A Knowledge Graph Language graph representation of triples.
@@ -353,6 +380,7 @@ class KnowledgeGraph:
         count = False
         question = False
         intersection = False
+        difference_a_b = False
 
         is_evaluating_relation = False
         relation_terms = []
@@ -603,6 +631,9 @@ class KnowledgeGraph:
                     if children[i].type == "INTERSECTION":
                         intersection = True
                         continue
+                    if children[i].type == "DIFFERENCE_A_B":
+                        difference_a_b = True
+                        continue
 
             final_results.append(result if result else [])
 
@@ -612,6 +643,9 @@ class KnowledgeGraph:
         if intersection:
             # print("Final results", final_results)
             final_result = set(final_results[0]).intersection(set(final_results[1]))
+            return [list(final_result)]
+        elif difference_a_b:
+            final_result = set(final_results[0]).difference(set(final_results[1]))
             return [list(final_result)]
         else:
             try:

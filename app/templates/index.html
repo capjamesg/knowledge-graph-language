@@ -7,6 +7,9 @@
     <title>KGL Interpreter</title>
     <meta name="description" content="An interpreter for the Knowledge Graph Language">
     <script src="https://kit.fontawesome.com/52ae67a839.js" crossorigin="anonymous" async=""></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://unpkg.com/@hpcc-js/wasm@0.3.11/dist/index.min.js"></script>
+    <script src="https://unpkg.com/d3-graphviz@3.0.5/build/d3-graphviz.js"></script>
     <style>
         * {
             margin: 0;
@@ -25,6 +28,7 @@
         }
         input {
             width: 100%;
+            height: 100%;
             padding: 10px;
             font-size: 16px;
             border: 1px solid #ccc;
@@ -51,12 +55,11 @@
             border: 1px solid #ccc;
             border-radius: 5px;
             padding: 20px;
-            margin-top: 10px;
             overflow: auto;
-            height: 500px;
-            max-height: 500px;
             width: 100%;
             background-color: #f1f1f1;
+            margin-right: 10px;
+            height: 100%;
         }
         a {
             text-decoration: none;
@@ -98,16 +101,17 @@
         form {
             display: flex;
             flex-direction: row;
+            height: fit-content;
         }
         button {
-            padding: 10px;
+            padding: 9px;
             border: 1px solid #ccc;
             border-radius: 5px;
             color: green;
             cursor: pointer;
             margin-left: 10px;
             display: flex;
-            height: fit-content;
+            height: 100%;
         }
         footer {
             margin-top: 10px;
@@ -143,6 +147,35 @@
                 color: black;
             }
         }
+        #output_container {
+            display: flex;
+            flex-direction: row;
+            max-width: 100%;
+            height: 500px;
+            max-height: 500px;
+        }
+        #graph {
+            max-width: 35em;
+            min-width: 35em;
+            overflow: auto;
+            border: 1px solid #ccc;
+            max-height: 520px;
+            border-radius: 5px;
+        }
+        #copied_tooltip {
+            display: none;
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: green;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+        .copy {
+            float: right;
+        }
         @media screen and (max-width: 600px) {
             h1 {
                 font-size: 24px;
@@ -154,6 +187,14 @@
             }
             .copy {
                 display: none;
+            }
+            #graph {
+                max-width: 100%;
+                min-width: 100%;
+                margin-top: 10px;
+            }
+            #output_container {
+                flex-direction: column;
             }
         }
     </style>
@@ -173,21 +214,25 @@
         <ul id="tabs">
             <li><a onclick="setMode('pretty');" href="#">View Pretty Print</a></li>
             <li><a onclick="setMode('json');" href="#">View Raw JSON</a></li>
-            <li><a class="copy" href="#" onclick="document.getElementById('code').select(); document.execCommand('copy'); return false;">Copy Query to Clipboard <i class="fas fa-copy"></i></a></li>
+            <div id="copied_tooltip"><i class="fas fa-check"></i> Copied!</div>
+            <li><a class="copy" href="#" onclick="document.getElementById('code').select(); document.execCommand('copy'); document.getElementById('copied_tooltip').style.display = 'block'; setTimeout(() => { document.getElementById('copied_tooltip').style.display = 'none'; }, 3000);"><i class="fas fa-copy"></i> Copy Query to Clipboard</a></li>
         </ul>
-        <section id="output">
-            <p>Make a query to see the output! 🤗</p>
-            <br>
-            <p>Here are a few examples:</p>
-            <ul id="examples">
-                <li><a href="#" onclick="runExample('{ coffee }')"><span class="bubble">{ coffee }</span></a>  Retrieve connections to a node</li>
-                <li><a href="#" onclick="runExample('{ taylor swift -> created }')"><span class="bubble">{ taylor swift -> created }</span></a>  Retrieve information about a relationship</li>
-                <li><a href="#" onclick="runExample('{ coffee }#')"> <span class="bubble">{ coffee }#</span></a>  Count connections to a node</li>
-            </ul>
-        </section>
+        <div id="output_container">
+            <section id="output">
+                <p>Make a query to see the output! 🤗</p>
+                <br>
+                <p>Here are a few examples:</p>
+                <ul id="examples">
+                    <li><a href="#" onclick="runExample('{ coffee }')"><span class="bubble">{ coffee }</span></a>  Retrieve connections to a node</li>
+                    <li><a href="#" onclick="runExample('{ taylor swift -> created }')"><span class="bubble">{ taylor swift -> created }</span></a>  Retrieve information about a relationship</li>
+                    <li><a href="#" onclick="runExample('{ coffee }#')"> <span class="bubble">{ coffee }#</span></a>  Count connections to a node</li>
+                </ul>
+            </section>
+            <div id="graph"></div>
+        </div>
         <footer>
             <p>Created by <a href="https://jamesg.blog" target="_blank">capjamesg</a>.</p>
-            <p><a href="">View Language Reference</a>.</p>
+            <p><a href="https://github.com/capjamesg/knowledge-graph-language">View Language Reference</a>.</p>
         </footer>
     </main>
     <script>
@@ -201,6 +246,36 @@
         function setMode(newMode) {
             mode = newMode;
             document.getElementById('output').innerHTML = '';
+            if (newMode === 'json') {
+                console.log(last_output);
+                const pre = document.createElement('pre');
+                pre.textContent = last_output;
+
+                const copy = document.createElement('a');
+
+                copy.textContent = 'Copy';
+                copy.href = '#';
+                copy.onclick = function() {
+                    pre.select();
+                    document.execCommand('copy');
+                    copy.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copy.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                    }, 3000);
+                };
+                copy.classList.add('copy');
+
+                document.getElementById('output').appendChild(copy);
+                document.getElementById('output').appendChild(pre);
+            } else {
+                // add "run query again" button
+                const button = document.createElement('button');
+                button.textContent = 'Run Query Again';
+                button.onclick = function() {
+                    document.getElementById('code').dispatchEvent(new KeyboardEvent('keypress', { 'key': 'Enter' }));
+                };
+                document.getElementById('output').appendChild(button);
+            }
         }
 
         function endsWithAny(suffixes, string) {
@@ -215,7 +290,6 @@
                 const suggestions = document.getElementById('suggestions').children;
                 if (suggestions.length > 0) {
                     document.getElementById('code').value = "{ " + suggestions[0].textContent;
-                    document.getElementById('suggestions').innerHTML = '';
                 }
             }
         });
@@ -250,6 +324,8 @@
             });
         });
 
+        var last_output = '';
+
         document.getElementById('code').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -271,6 +347,12 @@
                         document.getElementById('output').appendChild(p);
                         return;
                     }
+
+                    var dot = data["dot"];
+
+                    d3.select("#graph").graphviz(innerWidth < 600 ? { width: innerWidth, height: 500, zoom: true, fit: true } : { width: 600, height: 500, zoom: true, fit: true }).renderDot(dot);
+
+                    last_output = JSON.stringify(data, null, 2);
 
                     if (typeof data["result"][0] === 'number') {
                         const p = document.createElement('p');
@@ -295,7 +377,24 @@
                     if (mode === 'json') {
                         const pre = document.createElement('pre');
                         pre.textContent = JSON.stringify(data, null, 2);
+
+                        const copy = document.createElement('a');
+
+                        copy.textContent = 'Copy';
+                        copy.href = '#';
+                        copy.onclick = function() {
+                            pre.select();
+                            document.execCommand('copy');
+                            copy.textContent = 'Copied!';
+                            setTimeout(() => {
+                                copy.textContent = 'Copy';
+                            }, 3000);
+                        };
+                        copy.classList.add('copy');
+
+                        document.getElementById('output').appendChild(copy);
                         document.getElementById('output').appendChild(pre);
+                        last_output = JSON.stringify(data, null, 2);
                         return;
                     }
                     for (let i = 0; i < data["result"].length; i++) {
@@ -346,6 +445,14 @@
                 });
             }
         });
+
+        // if q= query string, set in input field
+        const urlParams = new URLSearchParams(window.location.search);
+        const q = urlParams.get('q');
+        if (q) {
+            document.getElementById('code').value = q;
+            document.getElementById('code').dispatchEvent(new KeyboardEvent('keypress', { 'key': 'Enter' }));
+        }
     </script>
 </body>
 </html>

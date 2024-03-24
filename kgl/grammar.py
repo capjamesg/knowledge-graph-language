@@ -1,8 +1,9 @@
 grammar = """
 start: comma_separated_list | most_connected | COUNT | QUESTION | query (operand query)*
 query: "{}" | "{" (graph "|")? node ((relation | interrelation) node)* "}" (EXPAND | QUESTION | COUNT)?
-operand: PLUS | INTERSECTION
+operand: PLUS | INTERSECTION | DIFFERENCE_A_B
 PLUS: "+"
+DIFFERENCE_A_B: "-"
 INTERSECTION: "INTERSECTION"
 relation: "->"
 comma_separated_list: "{" CNAME "," CNAME "," CNAME "}"
