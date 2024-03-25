@@ -367,7 +367,6 @@
                     time_taken.id = 'time_taken';
                     document.getElementById('output_container').after(time_taken);
                     
-
                     if (typeof data["result"][0] === 'number') {
                         const p = document.createElement('p');
                         p.textContent = data["result"][0];
@@ -433,23 +432,23 @@
                                 details.appendChild(summary);
                                 const p = document.createElement('p');
 
-                                if (keys_values[j][1].length > 0 && typeof keys_values[j][1][0] === 'object') {
-                                    keys_values[j][1] = keys_values[j][1].map(function(x) {
-                                        return Object.values(x).join(', ');
-                                    });
+                                if (Object.prototype.toString.call(keys_values[j][1]) === '[object Array]') {
+                                    // add p
                                     p.textContent = keys_values[j][1].join(', ');
-                                } 
-                                try {
-                                    // NB: This doesn't work properly. Need to fix this.
-                                    if (Object.keys(keys_values[j][1]).length > 0) {
-                                        p.textContent = JSON.stringify(keys_values[j][1]);
+
+                                }  else {
+                                    // parse as json, which needs nesting w/ details + summary
+                                    if (typeof keys_values[j][1] === 'object') {
+                                        for (var key in keys_values[j][1]) {
+                                            const nested_p = document.createElement('p');
+                                            nested_p.textContent = key + ': ' + keys_values[j][1][key];
+                                            details.appendChild(nested_p);
+                                        }
                                     } else {
                                         p.textContent = keys_values[j][1];
                                     }
-                                } catch (e) {
-                                    console.log(e);
-                                    p.textContent = keys_values[j][1];
-                                }
+                                
+                            }
                                 
                                 details.appendChild(p);
                                 details.open = true;

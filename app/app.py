@@ -15,7 +15,6 @@ for graph in kg.search_index.keys():
     connections = kg.reverse_index_by_connection[graph]
 
     for connection in connections:
-        print(connection)
         node_trie[connection] = True
 
 app = Flask(__name__)

@@ -112,7 +112,7 @@ def graph_to_dot(graph, query):
     # extract query
     query = query[1:-1].split("|")
     query = [q.strip() for q in query]
-    query = query[0]
+    query = query[0].replace("}", "").strip()
 
     graph = {query: graph}
 
@@ -121,8 +121,14 @@ def graph_to_dot(graph, query):
             # if is dict
             if isinstance(n, dict):
                 for k, v in n.items():
-                    for label in v:
-                        dot += f'"{query}" -> "{k}" [label="{label}"]\n'
+                    # if v is dict, iterate over keys
+                    if isinstance(v, dict):
+                        for key in v:
+                            for item in v[key]:
+                                dot += f'"{query}" -> "{item}" [label="{key}"]\n'
+                    else:
+                        for item in v:
+                            dot += f'"{query}" -> "{item}" [label="{k}"]\n'
             else:
                 root_node = query.split("->")[0]
                 relation = query.split("->")[1]
@@ -195,11 +201,14 @@ class KnowledgeGraph:
         # get name of most connected node
         most_connected_node = max(most_connected, key=most_connected.get)
 
-        print("Most connected node:", most_connected_node)
+        # order result alphabetically
+        most_connected[most_connected_node] = sorted(
+            most_connected[most_connected_node]
+        )
 
         return {most_connected_node: most_connected[most_connected_node]}
 
-    def add_node(self, triple, graph_name=DEFAULT_GRAPH) -> None:
+    def add_node(self, triple, graph_name=DEFAULT_GRAPH, strict_load = False) -> None:
         """
         Given a triple, add it to the graph.
         """
@@ -207,22 +216,14 @@ class KnowledgeGraph:
         try:
             self._validate_triple(triple)
         except ValueError as e:
+            if strict_load:
+                raise e
             return
 
-        # don't add if first item is only 1 len, unless it is "i"
-        if len(triple[0].strip()) < 1 and triple[0].strip() != "i":
-            return
-
-        triple = tuple(
-            [x.translate(str.maketrans("", "", string.punctuation)) for x in triple]
-        )
-
-        item = triple[0].lower().strip()
-        relates_to = triple[1].lower()
-        value = triple[2].lower().strip()
-
-        if isinstance(value, list):
-            relates_to = relates_to.strip()
+        if isinstance(triple[2], list):
+            item = triple[0].strip()
+            relates_to = triple[1].strip()
+            value = triple[2]
 
             for val in value:
                 val = val.strip()
@@ -244,8 +245,13 @@ class KnowledgeGraph:
 
                 self.index_by_connection.append((item, relates_to, val))
         else:
-            value = value.strip()
-            relates_to = relates_to.strip()
+            item = triple[0].strip()
+            value = triple[2].strip()
+            relates_to = triple[1].strip()
+
+            # remove trailing punctuations like .
+            item = item.strip(string.punctuation)
+            value = value.strip(string.punctuation)
 
             add_item_to_index(
                 item, relates_to, value, self.reverse_index_by_connection, graph_name
@@ -287,8 +293,13 @@ class KnowledgeGraph:
         """
         if graph_name not in self.reverse_index_by_connection:
             return {}
+        
+        result = self.reverse_index_by_connection[graph_name].get(item, {})
 
-        return self.reverse_index_by_connection[graph_name].get(item, {})
+        # order alphabetically
+        result = {k: sorted(v) for k, v in result.items()}
+
+        return result
 
     def get_nodes_by_connection(
         self, item, connection, graph_name=DEFAULT_GRAPH
@@ -430,17 +441,18 @@ class KnowledgeGraph:
                     serialize_shortest_path_as_str(shortest_path)
                     return True
 
-            return False
+            return False, start_time - time.time()
 
         if len(parent_tree) == 1 and parent_tree[0].data == "comma_separated_list":
             self.add_node(
-                (
-                    parent_tree[0].children[0].value,
-                    parent_tree[0].children[1].value,
-                    parent_tree[0].children[2].value,
+                triple=(
+                    parent_tree[0].children[0].value.strip(),
+                    parent_tree[0].children[1].value.strip(),
+                    parent_tree[0].children[2].value.strip()
                 )
             )
-            return []
+            
+            return self.get_nodes(parent_tree[0].children[0].value.strip()), start_time - time.time()
 
         for child in parent_tree:
             children = child.children
@@ -572,7 +584,6 @@ class KnowledgeGraph:
                                     embedding = self.similarity_index_model.encode(
                                         [node]
                                     )
-                                    print(node)
                                     D, I = self.similarity_index.search(embedding, 3)
                                     result = [
                                         self.index_by_connection[i][0] for i in I[0]
@@ -646,10 +657,10 @@ class KnowledgeGraph:
         if intersection:
             # print("Final results", final_results)
             final_result = set(final_results[0]).intersection(set(final_results[1]))
-            return [list(final_result)]
+            return [list(final_result)], start_time - time.time()
         elif difference_a_b:
             final_result = set(final_results[0]).difference(set(final_results[1]))
-            return [list(final_result)]
+            return [list(final_result)], start_time - time.time()
         else:
             try:
                 final_result = set(final_results[0]).union(set(final_results[1]))
@@ -663,7 +674,7 @@ class KnowledgeGraph:
                 # if len(all_items) == 0:
                 #     return []
 
-                return final_result
+                return final_result, start_time - time.time()
             except:
                 if len(final_results) == 0:
                     final_result = []
@@ -671,9 +682,9 @@ class KnowledgeGraph:
                     final_result = final_results[0]
 
         if count:
-            return len(final_result)
+            return len(final_result), start_time - time.time()
         elif question:
-            return bool(final_result)
+            return bool(final_result), start_time - time.time()
         elif expand:
             if isinstance(final_result, dict):
                 return final_result
@@ -688,7 +699,9 @@ class KnowledgeGraph:
 
             acc = sorted(acc, key=lambda x: list(x.keys())[0])
 
-            return acc
+            end_time = time.time()
+
+            return acc, end_time - start_time
 
         end_time = time.time()
 

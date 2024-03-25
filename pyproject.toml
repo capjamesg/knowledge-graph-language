@@ -15,7 +15,7 @@ license = "MIT License"
 classifiers = [
     "Programming Language :: Python :: 3",
 ]
-version = "0.1.1"
+version = "0.1.2"
 dynamic = ["version"]
 build_editable = true
 
