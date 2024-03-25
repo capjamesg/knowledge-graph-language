@@ -9,9 +9,16 @@ You can use this language to:
 - Return all nodes that are connected to a node and meet a specified condition.
 - Find how two nodes connect in a graph.
 
-This language is a work in progress.
+This README serves as the official language reference.
 
-## Ingesting Information
+The following blog posts discuss the design of the KGL language and the interpreter, respectively:
+
+- [Designing a knowledge graph query language](https://jamesg.blog/2024/03/22/kgl/)
+- [Designing an interpreter for Knowledge Graph Language (KGL)](https://jamesg.blog/2024/03/25/kgl-interpreter/)
+
+You can [try the language](https://jamesg.blog/kgl) on a knowledge graph calculated from James' Coffee Blog.
+
+## Data Format
 
 This project allows you to index triples of data like:
 
@@ -212,8 +219,9 @@ kg.add_node(("Alex", "Citations", ["MetaAI", "GoogleAI", "Coffee", "Teacup", "Ro
 ### Evaluate a Query
 
 ```python
-result = kg.evaluate("{ James }")
+result, query_time = kg.evaluate("{ James }")
 print(result)
+print(query_time)
 ```
 
 Responses are valid Python objects, whose type varies depending on your query.
@@ -225,6 +233,22 @@ But:
 - `!` queries return dictionaries.
 - `#` queries return integers.
 - `?` queries return booleans.
+
+### Create a Node
+
+You can create a node using the `add_node` Python function on a KGL class, or in native KGL.
+
+To create a node in native KGL, use the following syntax:
+
+```
+{ subject, predicate, object }
+```
+
+For example, the following command would create a node called `taylor swift` and a node called `amazing`, with the `is` predicate connecting them both together:
+
+```
+{ taylor swift, is, amazing }
+```
 
 ## Tests
 
