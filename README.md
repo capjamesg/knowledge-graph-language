@@ -2,6 +2,10 @@
 
 Knowledge Graph Language is a query language for interacting with graphs. It accepts semantic triples (i.e. `("James", "Enjoys", "Coffee")`), indexes them, and makes them available for querying.
 
+<video controls="" width="100%">
+  <source src="https://jamesg.blog/assets/kgl-interpreter-demo.mp4" type="video/mp4">
+</video>
+
 You can use this language to:
 
 - Find all attributes associated with a node in a graph.
