@@ -48,7 +48,7 @@ You can query a single item:
 
 This will return all items associated with the `James` entry:
 
-```
+```python
 {'Birthday': ['March 20th, 2024'], 'WorksFor': ['Roboflow', 'PersonalWeb', 'IndieWeb'], 'Enjoys': ['Coffee'], 'Hobbies': ['Making coffee']}
 ```
 
@@ -66,7 +66,7 @@ This query gets the `James` item, retrieves for whom James works, then reports t
 
 The query returns:
 
-```
+```python
 ['Computer vision software.']
 ```
 
@@ -87,7 +87,7 @@ This query gets the `Roboflow` node. Then, the query gets everyone who works at 
 
 This returns:
 
-```
+```python
 ['Making coffee']
 ```
 
@@ -115,7 +115,7 @@ Suppose you want to find all authors of the CLIP paper in a research graph, but 
 
 This query returns:
 
-```
+```python
 ['Person 2']
 ```
 
@@ -133,7 +133,7 @@ Consider this query:
 
 This returns:
 
-```
+```python
 ['Roboflow', ('James', 'WorksFor')]
 ```
 
@@ -151,7 +151,7 @@ If we execute that query in introspection mode, we can see all information about
 
 This returns:
 
-```
+```python
 [{'James': {'Birthday': ['March 20th, 2024'], 'WorksFor': ['Roboflow', 'PersonalWeb', 'IndieWeb'], 'Enjoys': ['Coffee'], 'Hobbies': ['Coffee']}}, {'Lenny': {'WorksFor': ['MetaAI', 'Roboflow']}}]
 ```
 
@@ -165,7 +165,7 @@ By default, all Sequential Queries return single values. For example, this query
 
 The response is:
 
-```
+```python
 ['James', 'Lenny']
 ```
 
@@ -177,7 +177,7 @@ We can enable introspection mode to learn more about each of these responses. To
 
 This returns all attributes related, within one degree, to James and Lenny, who both work at Roboflow:
 
-```
+```python
 [{'James': {'Birthday': ['March 20th, 2024'], 'WorksFor': ['Roboflow', 'PersonalWeb', 'IndieWeb'], 'Enjoys': ['Coffee'], 'Hobbies': ['Coffee']}}, {'Lenny': {'WorksFor': ['MetaAI', 'Roboflow']}}]
 ```
 
