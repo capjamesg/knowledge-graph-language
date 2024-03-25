@@ -25,7 +25,7 @@ app = Flask(__name__)
 def index():
     if request.method == "POST":
         try:
-            result = kg.evaluate(request.json["query"])
+            result, time_taken = kg.evaluate(request.json["query"])
 
             if isinstance(result, set):
                 result = [list(result)]
@@ -36,9 +36,7 @@ def index():
 
         dot = graph_to_dot(result, request.json["query"])
 
-        print(dot)
-
-        return jsonify({"result": result, "dot": dot})
+        return jsonify({"result": result, "dot": dot, "time_taken": time_taken})
 
     return render_template("index.html")
 

@@ -2,6 +2,7 @@ import csv
 import json
 import random
 import string
+import time
 from typing import Any, Dict, List, Union
 
 import faiss
@@ -368,6 +369,8 @@ class KnowledgeGraph:
         Evaluate a query on the graph.
         """
 
+        start_time = time.time()
+
         try:
             l = parser.parse(text)
         except:
@@ -687,7 +690,9 @@ class KnowledgeGraph:
 
             return acc
 
-        return final_results
+        end_time = time.time()
+
+        return final_results, end_time - start_time
 
     def load_from_csv(self, file_name, index_name=DEFAULT_GRAPH):
         """

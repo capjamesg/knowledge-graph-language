@@ -136,6 +136,12 @@
             background-color: yellow;
             color: black;
         }
+        #time_taken {
+            margin-top: 10px;
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 5px;
+        }
         button:focus {
             background-color: yellow;
             color: black;
@@ -176,7 +182,7 @@
         .copy {
             float: right;
         }
-        @media screen and (max-width: 600px) {
+        @media screen and (max-width: 1000px) {
             h1 {
                 font-size: 24px;
                 margin-bottom: 10px;
@@ -354,6 +360,14 @@
 
                     last_output = JSON.stringify(data, null, 2);
 
+                    const time_taken = document.createElement('p');
+                    // round to 3 dp
+                    data["time_taken"] = Math.round(data["time_taken"] * 1000) / 1000;
+                    time_taken.textContent = `Time taken: ${data["time_taken"]}ms`;
+                    time_taken.id = 'time_taken';
+                    document.getElementById('output_container').after(time_taken);
+                    
+
                     if (typeof data["result"][0] === 'number') {
                         const p = document.createElement('p');
                         p.textContent = data["result"][0];
@@ -374,6 +388,7 @@
                         document.getElementById('output').appendChild(p);
                         return;
                     }
+
                     if (mode === 'json') {
                         const pre = document.createElement('pre');
                         pre.textContent = JSON.stringify(data, null, 2);
