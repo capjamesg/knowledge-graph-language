@@ -72,17 +72,18 @@ The query returns:
 
 ### Filter Queries
 
+> [!IMPORTANT]  
+> This feature is not fully implemented.
+
 You can filter queries so that the flow of data is constrained to only work with results that match a condition.
 
 Consider this query:
 
 ```
-{ Roboflow ("EntityType" = "Company") -> WorksFor ("Enjoys" = "Coffee") -> Hobbies }
+{ Roboflow -> WorksFor ("Enjoys" = "Coffee") -> Hobbies }
 ```
 
-This query gets the instance of `Roboflow` that has the `EntityType` property `Company`. This could be used for disambiguation.
-
-Then, the query gets everyone who works at Roboflow who enjoys coffee. The query then finds who everyone works for, and returns their hobbies.
+This query gets the `Roboflow` node. Then, the query gets everyone who works at Roboflow who enjoys coffee. The query then finds who everyone works for, and returns their hobbies.
 
 This returns:
 
@@ -254,12 +255,29 @@ For example, the following command would create a node called `taylor swift` and
 { taylor swift, is, amazing }
 ```
 
+## Run the Web Interpreter
+
+To run the KGL web interpreter, first generate a knowledge graph in a CSV file. Each line should use the format `subject, predicate, object`. Then, open `app/app.py` and replace the `all1.csv` reference with the name of your CSV file. Then, install the required dependencies:
+
+```
+cd app/
+pip3 install -r requirements.txt
+```
+
+To run the web interpreter, execute the following command:
+
+```
+python3 app.py
+```
+
+The interpreter will open at `http://localhost:5000`.
+
 ## Tests
 
 To run the project test suite, run:
 
 ```
-pytest test
+pytest test/test.py
 ```
 
 ## License
