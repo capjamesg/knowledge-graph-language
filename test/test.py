@@ -14,40 +14,47 @@ def kg():
 
 
 def test_evaluate(kg):
-    assert kg.evaluate("{ James }") == [{"Likes": ["Coffee"]}]
-    assert kg.evaluate("{ James -> Likes }") == [["Coffee"]]
-    assert kg.evaluate("{ James <-> Coffee }") == [["James", ("Coffee", "Likes")]]
+    assert kg.evaluate("{ James }")[0] == [{"Likes": ["Coffee"]}]
+    assert kg.evaluate("{ James -> Likes }")[0] == [["Coffee"]]
+    assert kg.evaluate("{ James <-> Coffee }")[0] == [["James", ("Coffee", "Likes")]]
 
+def test_returns_query_time(kg):
+    _, time_taken = kg.evaluate("{ James }")
+    
+    assert time_taken > 0
 
 def test_evaluate_operations(kg):
-    assert kg.evaluate("{ James -> Likes }#") == 1
-    assert kg.evaluate("{ James -> Likes }?") == True
-    assert kg.evaluate("{ James <-> Coffee }?") == True
+    assert kg.evaluate("{ James -> Likes }#")[0] == 1
+    assert kg.evaluate("{ James -> Likes }?")[0] == True
+    assert kg.evaluate("{ James <-> Coffee }?")[0] == True
 
+def test_add_node_with_query(kg):
+    assert kg.evaluate("{evermore, is, amazing}")[0] == {"is": ["amazing"]}
 
 def test_adding_valid_triple_with_list_value(kg):
     kg.add_node(("James", "Likes", ["Terraria", "Cats"]))
-    assert kg.evaluate("{ James -> Likes }") == [["Coffee", "Terraria", "Cats"]]
+    result = kg.evaluate("{ James -> Likes }")[0]
+    assert set(result[0]) == {"Coffee", "Terraria", "Cats"}
 
 
 def test_adding_invalid_triple(kg):
     with pytest.raises(ValueError):
-        kg.add_node(("James", "Dislikes"))
-        kg.add_node(("James", "Dislikes", 1))
-        kg.add_node(("James", "Dislikes", ("Coffee", "Tea")))
+        kg.add_node(("James", "Dislikes"), strict_load=True)
+        kg.add_node(("James", "Dislikes", 1), strict_load=True)
+        kg.add_node(("James", "Dislikes", ("Coffee", "Tea")), strict_load=True)
 
 
 def test_evaluate_introspection(kg):
-    assert kg.evaluate("{ James -> Likes }!") == [{"Coffee": {"Likes": ["James"]}}]
+    assert kg.evaluate("{ James -> Likes }!")[0] == [{"Coffee": {"Likes": ["James"]}}]
 
 
 def test_querying_root_property_that_does_not_exist(kg):
-    assert kg.evaluate("{ Test }") == []
+    assert kg.evaluate("{ Test }")[0] == []
 
 
 def test_querying_leaf_property_that_does_not_exist(kg):
     with pytest.raises(ValueError):
-        kg.evaluate("{ James -> Dislikes }")
+        kg.evaluate("{ James -> Dislikes }")[0]
 
 
 def test_evaluate_union(kg):
@@ -58,13 +65,13 @@ def test_evaluate_union(kg):
 
 
 def test_evaluate_intersection(kg):
-    union = kg.evaluate("{ James -> Likes } INTERSECTION { Anna -> Likes }")
+    union = kg.evaluate("{ James -> Likes } INTERSECTION { Anna -> Likes }")[0]
     assert len(union[0]) == 0
 
 
 def test_add_triple(kg):
     kg.add_node(("James", "Likes", "Tea"))
-    assert kg.evaluate("{ James }") == [{"Likes": ["Coffee", "Tea"]}]
+    assert kg.evaluate("{ James }")[0] == [{"Likes": ["Coffee", "Tea"]}]
 
 
 def test_get_nodes(kg):
@@ -101,8 +108,8 @@ def test_read_from_tsv(kg):
     from kgl import KnowledgeGraph
 
     kg = KnowledgeGraph().load_from_tsv(os.path.join(test_dir, "data", "example.tsv"))
-    assert kg.evaluate("{ James }") == [{"Likes": ["Coffee"]}]
-    assert kg.evaluate("{ Anna }") == [{"Likes": ["Tea"]}]
+    assert kg.evaluate("{ James }")[0] == [{"Likes": ["Coffee"]}]
+    assert kg.evaluate("{ Anna }")[0] == [{"Likes": ["Tea"]}]
 
 
 def test_read_from_json(kg):
@@ -111,5 +118,5 @@ def test_read_from_json(kg):
     kg = KnowledgeGraph().load_from_json_file(
         os.path.join(test_dir, "data", "example.json")
     )
-    assert kg.evaluate("{ James }") == [{"Likes": ["Coffee"]}]
-    assert kg.evaluate("{ Anna }") == [{"Likes": ["Tea"]}]
+    assert kg.evaluate("{ James }")[0] == [{"Likes": ["Coffee"]}]
+    assert kg.evaluate("{ Anna }")[0] == [{"Likes": ["Tea"]}]
