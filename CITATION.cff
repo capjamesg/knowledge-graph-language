@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- given-names: "James"
+  orcid: "https://orcid.org/0009-0006-3736-1653"
+title: "knowledge-graph-language"
+version: 0.1.2
+doi: 10.5281/zenodo.10884108
+date-released: 2024-03-26
+url: "https://github.com/capjamesg/knowledge-graph-language"
