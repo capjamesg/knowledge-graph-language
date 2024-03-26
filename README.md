@@ -22,20 +22,6 @@ The following blog posts discuss the design of the KGL language and the interpre
 
 You can [try the language](https://jamesg.blog/kgl) on a knowledge graph calculated from James' Coffee Blog.
 
-## Data Format
-
-This project allows you to index triples of data like:
-
-```python
-("James", "Enjoys", "Coffee")
-("James", "Hobbies", "Making coffee")
-("James", "WorksFor", "Roboflow")
-("Roboflow", "Makes", "Computer Vision")
-("Roboflow", "EntityType", "Company")
-```
-
-A graph is then constructed from the triples that you can then query.
-
 ## Syntax
 
 ### Query a Single Item
@@ -190,6 +176,20 @@ You can use:
 - `?` to return True if your query returns a response and False if your query returns no response.
 - `#` to count the number of responses
 - `!` to return an introspection response.
+
+## Data Format
+
+This project allows you to index triples of data like:
+
+```python
+("James", "Enjoys", "Coffee")
+("James", "Hobbies", "Making coffee")
+("James", "WorksFor", "Roboflow")
+("Roboflow", "Makes", "Computer Vision")
+("Roboflow", "EntityType", "Company")
+```
+
+A graph is then constructed from the triples that you can then query.
   
 ## Python API
 
@@ -212,7 +212,7 @@ kg = KnowledgeGraph()
 You can ingest triples of strings:
 
 ```python
-kg.add_node(("Roboflow", "Owned", "Lenny"))
+kg.add_node(("Lenny", "Owns", "Roboflow"))
 ```
 
 You can also ingest triples whose third item is a list:
@@ -220,6 +220,83 @@ You can also ingest triples whose third item is a list:
 ```python
 kg.add_node(("Alex", "Citations", ["MetaAI", "GoogleAI", "Coffee", "Teacup", "Roboflow"]))
 ```
+
+#### Add Data in Native KGL
+
+You can add a relation in native KGL using the following syntax:
+
+```
+{ subject, predicate, object }
+```
+
+Here is an example:
+
+```
+{ Lenny, Owns, Roboflow }
+```
+
+#### Ingest from CSV
+
+To load data from a CSV file, use:
+
+```python
+kg = KnowledgeGraph().load_from_csv("./file.csv")
+```
+
+Each line in the CSV file should use the structure:
+
+```
+subject, predicate, object
+```
+
+There should be no header row in your file.
+
+#### Ingest from TSV
+
+To load data from a TSV file, use:
+
+```python
+kg = KnowledgeGraph().load_from_tsv("./file.tsv")
+```
+
+Each line in the TSV file should use the structure:
+
+```
+subject  predicate  object
+```
+
+There should be no header row in your file.
+
+#### Ingest from JSON
+
+To load data from a JSON file, use:
+
+```python
+kg = KnowledgeGraph().load_from_json_file("./file.json")
+```
+
+The JSON file should have the structure:
+
+```json
+[
+  {
+    "Entity": "Tessa Violet",
+    "is": "a singer",
+    "wrote": ["Games", "Haze"]
+  }
+]
+```
+
+`Entity` is a reserved key (case sensitive) that states the entity to which all pairs in a specific JSON entry.
+
+This will be converted into the triples:
+
+```python
+("Tessa Violet", "is", "a singer")
+("Tessa Violet", "wrote", ["Games", "Haze"]
+```
+
+These triples will then be ingested into a KGL data store.
 
 ### Evaluate a Query
 
