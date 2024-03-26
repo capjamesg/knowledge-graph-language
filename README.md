@@ -1,3 +1,8 @@
+[![DOI](https://zenodo.org/badge/775121410.svg)](https://zenodo.org/doi/10.5281/zenodo.10884108)
+[![version](https://badge.fury.io/py/kgl.svg)](https://badge.fury.io/py/kgl)
+[![license](https://img.shields.io/pypi/l/kgl)](https://github.com/capjamesg/knowledge-graph-language/blob/main/LICENSE.md)
+[![python-version](https://img.shields.io/pypi/pyversions/kgl)](https://badge.fury.io/py/kgl)
+
 # Knowledge Graph Language (KGL)
 
 Knowledge Graph Language is a query language for interacting with graphs. It accepts semantic triples (i.e. `("James", "Enjoys", "Coffee")`), indexes them, and makes them available for querying.
