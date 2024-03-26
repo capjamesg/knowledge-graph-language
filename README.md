@@ -316,22 +316,6 @@ But:
 - `#` queries return integers.
 - `?` queries return booleans.
 
-### Create a Node
-
-You can create a node using the `add_node` Python function on a KGL class, or in native KGL.
-
-To create a node in native KGL, use the following syntax:
-
-```
-{ subject, predicate, object }
-```
-
-For example, the following command would create a node called `taylor swift` and a node called `amazing`, with the `is` predicate connecting them both together:
-
-```
-{ taylor swift, is, amazing }
-```
-
 ## Run the Web Interpreter
 
 To run the KGL web interpreter, first generate a knowledge graph in a CSV file. Each line should use the format `subject, predicate, object`. Then, open `app/app.py` and replace the `all1.csv` reference with the name of your CSV file. Then, install the required dependencies:
