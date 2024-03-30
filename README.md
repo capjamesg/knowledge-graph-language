@@ -29,6 +29,21 @@ You can [try the language](https://jamesg.blog/kgl) on a knowledge graph calcula
 
 ## Syntax
 
+### Cheat Sheet
+
+```
+{ coffee } # Query a single item
+{ coffee -> is } # Query a relationship of an item
+{ coffee -> is }! # Show all second degree connections to the results from the query { coffee -> is }
+{ coffee }? # Query if { coffee } returns a value
+{ coffee }# # State the number of edges attached to the node
+{ coffee } <-> { taylor swift } # Find the shortest connecting path between "coffee" and "taylor swift"
+{ coffee -> isMadeBy ("Company" = "Hasbean") } # Find all coffees made by the company Hasbean
+{ folklore } + { evermore } # Combine the results of two queries
+{ taylorSwift | folklore } # Query the "folklore" node in the "taylorSwift" graph (the default graph is called "default" and is implicit)
+```
+
+
 ### Query a Single Item
 
 You can query a single item:
