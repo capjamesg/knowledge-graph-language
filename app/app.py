@@ -45,6 +45,7 @@ def autocomplete():
     if request.method == "POST" and AUTOCOMPLETE:
         prefix = request.json["query"]
         prefix = prefix.lstrip("{ ").strip()
+        print(prefix)
 
         if len(prefix) < 2:
             return jsonify({"completions": []})

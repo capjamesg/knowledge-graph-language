@@ -25,6 +25,7 @@
         }
         main {
             padding: 25px;
+            height: 100vh;
         }
         input {
             width: 100%;
@@ -91,7 +92,7 @@
             margin-right: 10px;
         }
         #examples {
-            margin-top: 10px;
+            margin-top: 20px;
             list-style-type: none;
         }
         #examples li {
@@ -141,6 +142,7 @@
             background-color: #f1f1f1;
             padding: 10px;
             border-radius: 5px;
+            display: inline-block;
         }
         button:focus {
             background-color: yellow;
@@ -157,15 +159,14 @@
             display: flex;
             flex-direction: row;
             max-width: 100%;
-            height: 500px;
-            max-height: 500px;
+            height: 100%;
+            max-height: 80vh;
         }
         #graph {
             max-width: 35em;
             min-width: 35em;
             overflow: auto;
             border: 1px solid #ccc;
-            max-height: 520px;
             border-radius: 5px;
         }
         #copied_tooltip {
@@ -182,7 +183,75 @@
         .copy {
             float: right;
         }
+        #output {
+            text-align: center;
+        }
+        #examples {
+            font-size: 14px;
+            margin-top: 10px;
+            text-align: left;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+        #examples .bubble {
+            display: block;
+        }
+        #examples li {
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid lightgrey;
+            margin-left: 0;
+            margin-right: 10px;
+            text-align: center;
+        }
+        #graph {
+            text-align: center;
+            padding: 10px;
+        }
+        #history {
+            max-width: 100%;
+            overflow: auto;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            min-width: 200px;
+            margin-right: 10px;
+        }
+        #history li:hover {
+            background-color: #f1f1f1;
+        }
+        #history li:first-child {
+            border-top: 1px solid #ccc;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #history li {
+            cursor: pointer;
+            border-bottom: 1px solid #ccc;
+            padding: 10px;
+        }
+        #run {
+            min-width: 250px;
+        }
+        #run_container {
+            color: white;
+            background-color: green;
+        }
+        #run_container i {
+            color: white;
+        }
         @media screen and (max-width: 1000px) {
+            #examples {
+                text-align: center;
+            }
+            #graph {
+                margin-top: 10px;
+                max-height: 200px;
+            }
             h1 {
                 font-size: 24px;
                 margin-bottom: 10px;
@@ -202,46 +271,91 @@
             #output_container {
                 flex-direction: column;
             }
+            .bubble {
+                display: block;
+            }
+            .hide-on-mobile {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
     <main>
-        <h1>KGL Interpreter <i class="fas fa-code"></i></h1>
+        <header>
+            <h1>KGL Interpreter <i class="fas fa-code"></i></h1>
+            <ul id="tabs" class="hide-on-mobile">
+                <li><a onclick="setMode('pretty');" href="#" >View Pretty Print</a></li>
+                <li><a onclick="setMode('json');" href="#">View Raw JSON</a></li>
+                <li><a href="https://github.com/capjamesg/knowledge-graph-language" target="_blank">View Language Reference</a></li>
+                <div id="copied_tooltip"><i class="fas fa-check"></i> Copied!</div>
+                <li><a class="copy" href="#" onclick="document.getElementById('code').select(); document.execCommand('copy'); document.getElementById('copied_tooltip').style.display = 'block'; setTimeout(() => { document.getElementById('copied_tooltip').style.display = 'none'; }, 3000);"><i class="fas fa-copy"></i> Copy Query to Clipboard</a></li>
+            </ul>
+        </header>
         <form>
             <input type="text" name="code" id="code" placeholder="{ }" value="{ }" />
-            <button onclick="document.getElementById('code').dispatchEvent(new KeyboardEvent('keypress', { 'key': 'Enter' }))" type="button"><i class="fas fa-play"></i> <span>Run</span></button>
-            <!-- <ul>
-                <li>{ coffee } - Retrieve connections to a node.</li>
-                <li>{ i -> like } - Retrieve information about a relationship.</li>
-            </ul> -->
+            <button onclick="document.getElementById('code').dispatchEvent(new KeyboardEvent('keypress', { 'key': 'Enter' }))" type="button" id="run_container"><span id="run">Run</span> <i class="fas fa-play"></i></button>
         </form>
         <p id="suggestions"></p>
-        <ul id="tabs">
-            <li><a onclick="setMode('pretty');" href="#">View Pretty Print</a></li>
-            <li><a onclick="setMode('json');" href="#">View Raw JSON</a></li>
-            <div id="copied_tooltip"><i class="fas fa-check"></i> Copied!</div>
-            <li><a class="copy" href="#" onclick="document.getElementById('code').select(); document.execCommand('copy'); document.getElementById('copied_tooltip').style.display = 'block'; setTimeout(() => { document.getElementById('copied_tooltip').style.display = 'none'; }, 3000);"><i class="fas fa-copy"></i> Copy Query to Clipboard</a></li>
-        </ul>
         <div id="output_container">
+            <section id="history">
+                <h2 style="font-size: 1em;">History</h2>
+                <ul id="history_list">
+                    <li>Make a query to start a history.</li>
+                </ul>
+            </section>
             <section id="output">
                 <p>Make a query to see the output! 🤗</p>
-                <br>
-                <p>Here are a few examples:</p>
                 <ul id="examples">
                     <li><a href="#" onclick="runExample('{ coffee }')"><span class="bubble">{ coffee }</span></a>  Retrieve connections to a node</li>
                     <li><a href="#" onclick="runExample('{ taylor swift -> created }')"><span class="bubble">{ taylor swift -> created }</span></a>  Retrieve information about a relationship</li>
                     <li><a href="#" onclick="runExample('{ coffee }#')"> <span class="bubble">{ coffee }#</span></a>  Count connections to a node</li>
                 </ul>
             </section>
-            <div id="graph"></div>
+            <div id="graph"><i class="fa-solid fa-network-wired"></i><br><p>A graph of your query results will appear here.</p></div>
         </div>
-        <footer>
-            <p>Created by <a href="https://jamesg.blog" target="_blank">capjamesg</a>.</p>
-            <p><a href="https://github.com/capjamesg/knowledge-graph-language">View Language Reference</a>.</p>
-        </footer>
     </main>
     <script>
+        function setHistory() {
+            const code = document.getElementById('code').value;
+            // history is localstorage
+            var history = JSON.parse(localStorage.getItem('history')) || [];
+
+            history.push(code);
+            localStorage.setItem('history', JSON.stringify(history));
+        }
+
+        var autocomplete_buffer = [];
+
+        function setHistoryVisual () {
+            const history = JSON.parse(localStorage.getItem('history')) || [];
+            const ul = document.getElementById('history_list');
+            // show in reverse order
+            history.reverse();
+            for (let i = 0; i < history.length; i++) {
+                // clear history if i == 0
+                if (i === 0) {
+                    ul.innerHTML = '';
+                }
+                // hide > 10
+                if (i === 10) {
+                    break;
+                }
+                const li = document.createElement('li');
+                li.textContent = history[i];
+                li.style.cursor = 'pointer';
+                li.onclick = function() {
+                    document.getElementById('code').value = history[i];
+                    // set styles
+                    document.getElementById('output').innerHTML = '';
+                    document.getElementById('code').dispatchEvent(new KeyboardEvent('keypress', { 'key': 'Enter' }));
+                };
+                ul.appendChild(li);
+            }
+        }
+
+        setHistoryVisual();
+
         var mode = 'pretty';
 
         function runExample (example) {
@@ -294,14 +408,42 @@
             if (e.key === 'Tab' && document.activeElement === document.getElementById('code') && !e.shiftKey && !endsWithAny(['}', '!', '?'], document.getElementById('code').value)) {
                 e.preventDefault();
                 const suggestions = document.getElementById('suggestions').children;
-                if (suggestions.length > 0) {
-                    document.getElementById('code').value = "{ " + suggestions[0].textContent;
+                // if no suggestion, add ->
+                if (suggestions.length === 0) {
+                    document.getElementById('code').value += '-> ';
+                    return;
                 }
+                // replace all text after last ->
+                var code = document.getElementById('code').value;
+                const last_arrow = code.lastIndexOf('->');
+                var last_part = code.substring(last_arrow + 2);
+                code = code.substring(0, last_arrow + 2);
+                console.log(last_part);
+                document.getElementById('code').value = code + " " + suggestions[0].textContent;
+                // break;
             }
         });
         
         document.getElementById('code').addEventListener('input', function(e) {
-            const code = document.getElementById('code').value;
+            var code = document.getElementById('code').value;
+            // get text after last ->
+            const last_arrow = code.lastIndexOf('->');
+            console.log(last_arrow);
+            var last_part = code.substring(last_arrow + 2);
+            console.log(last_part);
+
+            // if key pressed is space, clear suggestions
+            if (e.data === ' ') {
+                document.getElementById('suggestions').innerHTML = '';
+                return;
+            }
+
+            // if there is no { at the start, add it
+            if (code[0] !== '{') {
+                document.getElementById('code').value = '{ ' + code;
+            }
+
+            var code = last_part;
             fetch('/autocomplete', {
                 method: 'POST',
                 headers: {
@@ -335,8 +477,10 @@
         document.getElementById('code').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                const code = document.getElementById('code').value;
-                console.log(code);
+
+                document.getElementById('output').style.textAlign = 'left';
+                var code = document.getElementById('code').value;
+
                 fetch('/', {
                     method: 'POST',
                     headers: {
@@ -356,16 +500,26 @@
 
                     var dot = data["dot"];
 
+                    setHistory();
+
+                    // remove #graph innertext
+                    document.getElementById('graph').innerHTML = '';
+
                     d3.select("#graph").graphviz(innerWidth < 600 ? { width: innerWidth, height: 500, zoom: true, fit: true } : { width: 600, height: 500, zoom: true, fit: true }).renderDot(dot);
 
                     last_output = JSON.stringify(data, null, 2);
 
-                    const time_taken = document.createElement('p');
+                    // if time taken exists
+                    if (document.getElementById('time_taken')) {
+                        document.getElementById('time_taken').remove();
+                    }
+                    const time_taken = document.createElement('li');
                     // round to 3 dp
                     data["time_taken"] = Math.round(data["time_taken"] * 1000) / 1000;
                     time_taken.textContent = `Time taken: ${data["time_taken"]}ms`;
                     time_taken.id = 'time_taken';
-                    document.getElementById('output_container').after(time_taken);
+                    // add as first li in tabs
+                    document.getElementById('tabs').firstChild.after(time_taken);
                     
                     if (typeof data["result"][0] === 'number') {
                         const p = document.createElement('p');
@@ -387,6 +541,9 @@
                         document.getElementById('output').appendChild(p);
                         return;
                     }
+
+                    // add item to autocomplete buffer
+                    autocomplete_buffer.push([]);
 
                     if (mode === 'json') {
                         const pre = document.createElement('pre');
@@ -429,7 +586,13 @@
                                 const summary = document.createElement('summary');
 
                                 summary.textContent = keys_values[j][0];
+                                summary.id = keys_values[j][0];
+                                console.log(summary.id);
                                 details.appendChild(summary);
+                                
+                                // add all summaries to autocomplete buffer
+                                autocomplete_buffer[autocomplete_buffer.length - 1].push(keys_values[j][0]);
+
                                 const p = document.createElement('p');
 
                                 if (Object.prototype.toString.call(keys_values[j][1]) === '[object Array]') {
@@ -453,9 +616,12 @@
                                 details.appendChild(p);
                                 details.open = true;
                                 document.getElementById('output').appendChild(details);
+                                
                             }
                         }
                     }
+                    // add to hsitory
+                    setHistoryVisual();
                 });
             }
         });
