@@ -2,7 +2,6 @@
 [![version](https://badge.fury.io/py/kgl.svg)](https://badge.fury.io/py/kgl)
 [![license](https://img.shields.io/pypi/l/kgl)](https://github.com/capjamesg/knowledge-graph-language/blob/main/LICENSE.md)
 [![python-version](https://img.shields.io/pypi/pyversions/kgl)](https://badge.fury.io/py/kgl)
-[![downloads](https://img.shields.io/pypi/dm/kgl)](https://pypistats.org/packages/kgl)
 [![test workflow](https://github.com/capjamesg/knowledge-graph-language/actions/workflows/tests.yml/badge.svg)](https://github.com/capjamesg/knowledge-graph-language/actions/workflows/tests.yml)
 
 # Knowledge Graph Language (KGL)
