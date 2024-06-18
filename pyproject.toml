@@ -22,3 +22,4 @@ build_editable = true
 [tool.poetry.dependencies]
 python = "^3.8"
 lark = "^0.11.3"
+faiss-cpu = "^1.7.0"
