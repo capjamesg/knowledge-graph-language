@@ -21,7 +21,8 @@ setuptools.setup(
     install_requires=[
         "lark==0.11.3",
         "numpy<2.0",
-        "faiss-cpu"
+        "faiss-cpu",
+        "click"
     ],
     packages=find_packages(exclude=("tests",)),
     extras_require={
