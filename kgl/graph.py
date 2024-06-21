@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Union
 import faiss
 import lark
 
+from functools import lru_cache
 from .grammar import grammar
 
 parser = lark.Lark(grammar)
@@ -375,6 +376,7 @@ class KnowledgeGraph:
                     relation
                 ].remove(item)
 
+    @lru_cache(maxsize=1000)
     def evaluate(self, text) -> Union[int, bool, List[Dict[str, Any]]]:
         """
         Evaluate a query on the graph.
@@ -516,10 +518,9 @@ class KnowledgeGraph:
                             )
 
                             if i == len(children) - 2 or i == len(children) - 1:
-                                print("Evaluating relation", relation_terms)
                                 result = self.get_connection_paths(
-                                    relation_terms[0],
-                                    relation_terms[1],
+                                    relation_terms[0].strip(),
+                                    relation_terms[1].strip(),
                                     self.graph_to_query,
                                 )
                                 node = result

@@ -27,6 +27,12 @@ setuptools.setup(
     extras_require={
         "dev": ["flake8", "black==22.3.0", "isort", "twine", "pytest", "wheel", "tox", "responses"],
     },
+    entry_points={
+        "console_scripts": [
+            "kgl use = kgl.cli:use",
+            "kgl = kgl.cli:kgl",
+        ],
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
