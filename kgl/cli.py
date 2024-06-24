@@ -2,6 +2,7 @@ import click
 import os
 import json
 from .graph import KnowledgeGraph
+from . import __version__
 
 # Create ~/.cache/kgl if it doesn't exist
 if not os.path.exists(os.path.expanduser("~/.cache/kgl")):
@@ -18,6 +19,7 @@ def set_current(graph):
         json.dump(graph, f)
 
 @click.group()
+@click.version_option(version=__version__)
 def cli():
     pass
 
