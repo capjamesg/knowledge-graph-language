@@ -4,6 +4,7 @@ import os
 import lark
 from nltk.corpus import stopwords
 from nltk import download as nltk_download
+import emoji
 
 print("Downloading stopwords...")
 nltk_download("stopwords")
@@ -43,6 +44,7 @@ character_ranges["numbers"] = [str(random.randint(1, 10_000_000)) for _ in range
 character_ranges["long_numbers"] = [
     str(random.randint(10_000_000_000_000, 10_000_000_000_000_000)) for _ in range(1000)
 ]
+character_ranges["emojis"] = list(emoji.EMOJI_DATA.keys())
 
 supported_languages.append("unicode")
 
@@ -88,10 +90,10 @@ def execute_query(query):
         kg.evaluate(query)
     except (lark.exceptions.UnexpectedCharacters, ValueError):
         # In this case, the program has successfully detected an invalid input.
-        return False
+        return "pass"
     except Exception as e:
         # In this case, an unknown error has been raised.
-        return True
+        return "fail"
 
 
 def test_fuzzer():
@@ -124,7 +126,7 @@ def test_fuzzer():
     test_count = len(tests)
 
     for test in tests:
-        if execute_query(test):
+        if execute_query(test) == "fail":
             failed_tests.append(test)
             if __name__ != "__main__":
                 print(test)

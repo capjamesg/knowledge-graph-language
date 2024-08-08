@@ -147,13 +147,19 @@ def test_max_query_call_invocation_error(kg):
     with pytest.raises(QueryDepthExceededError):
         kg.evaluate(query)
 
+def test_empty_queries(kg):
+    assert kg.evaluate("") == []
+    assert kg.evaluate("{}") == []
 
-def test_incomplete_queries(kg):
+def test_malformed_queries(kg):
     with pytest.raises(ValueError):
         kg.evaluate("{ James")
         kg.evaluate("{ James -> Likes")
+        kg.evaluate("{ James -> Likes + Coffee -> is }")
+        kg.evaluate("{{")
         kg.evaluate("{")
         kg.evaluate("}")
+        kg.evaluate("}}")
         kg.evaluate("{{ James -> Likes }")
         kg.evaluate("{ James -> Likes }}")
         kg.evaluate("{ James -> Likes }{")
