@@ -1,11 +1,12 @@
-import setuptools
-from setuptools import find_packages
 import re
 
-with open("./kgl/__init__.py", 'r') as f:
+import setuptools
+from setuptools import find_packages
+
+with open("./kgl/__init__.py", "r") as f:
     content = f.read()
     version = re.search(r'__version__\s*=\s*[\'"]([^\'"]*)[\'"]', content).group(1)
-    
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
@@ -23,11 +24,22 @@ setuptools.setup(
         "numpy<2.0",
         "faiss-cpu",
         "click",
-        "lark-parser[regex]"
+        "lark-parser[regex]",
     ],
     packages=find_packages(exclude=("tests",)),
     extras_require={
-        "dev": ["flake8", "black==22.3.0", "isort", "twine", "pytest", "wheel", "tox", "responses", "nltk"],
+        "dev": [
+            "flake8",
+            "black==22.3.0",
+            "isort",
+            "twine",
+            "pytest",
+            "wheel",
+            "tox",
+            "responses",
+            "nltk",
+            "emoji",
+        ],
     },
     entry_points={
         "console_scripts": [
