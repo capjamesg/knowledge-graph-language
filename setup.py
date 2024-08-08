@@ -22,11 +22,12 @@ setuptools.setup(
         "lark==0.11.3",
         "numpy<2.0",
         "faiss-cpu",
-        "click"
+        "click",
+        "lark-parser[regex]"
     ],
     packages=find_packages(exclude=("tests",)),
     extras_require={
-        "dev": ["flake8", "black==22.3.0", "isort", "twine", "pytest", "wheel", "tox", "responses"],
+        "dev": ["flake8", "black==22.3.0", "isort", "twine", "pytest", "wheel", "tox", "responses", "nltk"],
     },
     entry_points={
         "console_scripts": [
