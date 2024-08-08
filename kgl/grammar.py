@@ -12,15 +12,15 @@ EXPAND: "!"
 QUESTION: "?"
 COUNT: "#"
 COMPARATOR: "=" | "!=" | ">" | "<"
-CNAME: /[a-zA-Z0-9_ ]+/
+CNAME: /[\\w\\p{L}0-9_ ]+/
 condition: ("(" string COMPARATOR string ")"?)*
 node: property (enumerate_options | subsequence_operator | near)? condition?
 subsequence_operator: "++"
 enumerate_options: "+"
 most_connected: "*"
 near: "~"
-graph: /[a-zA-Z0-9_]+/
-property: /[a-zA-Z0-9_ ]+/
+graph: /[\\w\\p{L}0-9_]+/
+property: /[\\w\\p{L}0-9_ ]+/
 string: ESCAPED_STRING | int
 int: /[0-9]+/
 %import common.WS

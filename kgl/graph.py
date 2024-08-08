@@ -11,10 +11,13 @@ import lark
 from functools import lru_cache
 from .grammar import grammar
 
-parser = lark.Lark(grammar)
+parser = lark.Lark(grammar, regex=True)
 
 DEFAULT_GRAPH = "default"
+MAX_QUERY_CALLS_IN_SINGLE_EVALUATION_CONTEXT = 50
 
+class QueryDepthExceededError(Exception):
+    pass
 
 def value_error(error_type, message):
     if error_type == "error":
@@ -174,6 +177,7 @@ class KnowledgeGraph:
         self.search_index = {graph_name: {}}
         self.allow_substring_search = allow_substring_search
         self.similarity_index_model = None
+        self.query_calls_in_evaluation_context = 0
 
         if create_similarity_index:
             from sentence_transformers import SentenceTransformer
@@ -292,6 +296,11 @@ class KnowledgeGraph:
         """
         Get the nodes connected to an item.
         """
+        self.query_calls_in_evaluation_context += 1
+
+        if self.query_calls_in_evaluation_context > MAX_QUERY_CALLS_IN_SINGLE_EVALUATION_CONTEXT:
+            raise QueryDepthExceededError(f"The maximum query depth is {MAX_QUERY_CALLS_IN_SINGLE_EVALUATION_CONTEXT} in a single call. Please limit the number of queries in a single evaluation context.")
+
         if graph_name not in self.reverse_index_by_connection:
             return {}
         
@@ -381,6 +390,8 @@ class KnowledgeGraph:
         """
         Evaluate a query on the graph.
         """
+
+        self.query_calls_in_evaluation_context = 0
 
         start_time = time.time()
 
