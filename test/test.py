@@ -12,24 +12,40 @@ def kg():
     kg = KnowledgeGraph().load_from_csv(os.path.join(test_dir, "data", "example.csv"))
     return kg
 
+@pytest.fixture
+def unicode_kg():
+    from kgl import KnowledgeGraph
+
+    kg = KnowledgeGraph().load_from_csv(os.path.join(test_dir, "data", "unicode_example.csv"))
+    return kg
+
 
 def test_evaluate(kg):
     assert kg.evaluate("{ James }")[0] == [{"Likes": ["Coffee"]}]
     assert kg.evaluate("{ James -> Likes }")[0] == [["Coffee"]]
     assert kg.evaluate("{ James <-> Coffee }")[0] == [["James", ("Coffee", "Likes")]]
 
+def test_unicode_query(unicode_kg):
+    assert unicode_kg.evaluate("{ Jamés }")[0] == [{"Likes": ["Coffee"]}]
+    assert unicode_kg.evaluate("{ Анна -> Likes }")[0] == [["Tea"]]
+    assert unicode_kg.evaluate("{ Анна <-> Tea }")[0] == [["Анна", ("Tea", "Likes")]]
+    
+
 def test_returns_query_time(kg):
     _, time_taken = kg.evaluate("{ James }")
-    
+
     assert time_taken > 0
+
 
 def test_evaluate_operations(kg):
     assert kg.evaluate("{ James -> Likes }#")[0] == 1
     assert kg.evaluate("{ James -> Likes }?")[0] == True
     assert kg.evaluate("{ James <-> Coffee }?")[0] == True
 
+
 def test_add_node_with_query(kg):
     assert kg.evaluate("{evermore, is, amazing}")[0] == {"is": ["amazing"]}
+
 
 def test_adding_valid_triple_with_list_value(kg):
     kg.add_node(("James", "Likes", ["Terraria", "Cats"]))
@@ -120,3 +136,25 @@ def test_read_from_json(kg):
     )
     assert kg.evaluate("{ James }")[0] == [{"Likes": ["Coffee"]}]
     assert kg.evaluate("{ Anna }")[0] == [{"Likes": ["Tea"]}]
+
+
+def test_max_query_call_invocation_error(kg):
+    from kgl import QueryDepthExceededError
+
+    # length of this will be 150 calls, over default max of 50
+    query = "{" + ("coffee -> is -> coffee" * 50) + "}"
+
+    with pytest.raises(QueryDepthExceededError):
+        kg.evaluate(query)
+
+
+def test_incomplete_queries(kg):
+    with pytest.raises(ValueError):
+        kg.evaluate("{ James")
+        kg.evaluate("{ James -> Likes")
+        kg.evaluate("{")
+        kg.evaluate("}")
+        kg.evaluate("{{ James -> Likes }")
+        kg.evaluate("{ James -> Likes }}")
+        kg.evaluate("{ James -> Likes }{")
+        kg.evaluate("{ James -> Likes } + ")
