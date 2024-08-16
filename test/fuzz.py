@@ -5,6 +5,7 @@ import lark
 from nltk.corpus import stopwords
 from nltk import download as nltk_download
 import emoji
+import string
 
 print("Downloading stopwords...")
 nltk_download("stopwords")
@@ -39,6 +40,8 @@ supported_languages = stopwords.fileids()
 character_ranges = {
     file_id: list(stopwords.words(file_id)) for file_id in supported_languages
 }
+
+character_ranges["alphanumeric"] = string.ascii_letters + string.digits
 character_ranges["unicode"] = [chr(i) for i in range(0x0000, 0x10FFFF)]
 character_ranges["numbers"] = [str(random.randint(1, 10_000_000)) for _ in range(1000)]
 character_ranges["long_numbers"] = [
@@ -69,7 +72,7 @@ def mutate(
     seed = list(seed)
 
     for i in range(len(seed)):
-        if change() and i not in characters_to_skip:
+        if change() and seed[i] not in characters_to_skip:
             seed[i] = random.choice(character_ranges[character_range])
 
     return "".join(seed)
@@ -102,6 +105,7 @@ def test_fuzzer():
     tests = []
 
     tests.extend([mutate(seed) for seed in seeds for _ in range(ITERATIONS_PER_SEED)])
+
     tests.extend(
         [mutate(seed, []) for seed in seeds for _ in range(ITERATIONS_PER_SEED)]
     )
